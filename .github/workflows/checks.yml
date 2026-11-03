@@ -1,0 +1,63 @@
+name: FitLife checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_ROOT_HOST: "%"
+        ports: ["127.0.0.1:3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4
+        ports: ["127.0.0.1:6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      FITLIFE_DB_ENVIRONMENT: test
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12.16"
+          cache: pip
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: python -m pip install '.[dev]'
+      - run: python scripts/ci_database.py
+      - run: python -m ruff check fitlife migrations tests scripts
+      - run: python -m ruff format --check fitlife migrations tests scripts
+      - run: python -m pytest -p pytest_asyncio.plugin --integration --junitxml=artifacts/tests/ci.xml
+      - run: python -m fitlife.evaluate --split dev
+      - run: python -m fitlife.evaluate --split holdout
+      - run: python -m fitlife.evaluate_multi --split dev
+      - run: python -m fitlife.evaluate_multi --split holdout
+      - run: python -m fitlife.task_eval --split dev
+      - run: python -m fitlife.task_eval --split holdout
+      - run: python -m fitlife.process_check
+      - run: docker build --tag fitlife:ci .
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: regression-evidence
+          path: |
+            artifacts/tests/
+            artifacts/evaluations/
+            artifacts/multi-evaluations/
+            artifacts/task-evaluations/
+            artifacts/process-checks/
+          retention-days: 14

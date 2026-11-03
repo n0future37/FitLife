@@ -1,0 +1,17 @@
+**
+!Dockerfile
+!pyproject.toml
+!alembic.ini
+!fitlife/
+!fitlife/**
+!migrations/
+!migrations/**
+!tests/
+!tests/**
+!evals/
+!evals/**
+!scripts/
+!scripts/**
+**/__pycache__/
+**/*.pyc
+**/.env*

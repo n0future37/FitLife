@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitLife · 一步一步，保持运动</title><link rel="stylesheet" href="/assets/style.css"></head>
+<body>
+<header><a href="/" class="brand">FitLife<span>运动 · 饮食 · 身体</span></a><p>一步一步，保持运动。</p><button id="logout" hidden>退出</button></header>
+<main>
+<section id="login" class="login panel"><span class="eyebrow">欢迎回来</span><h1>从今天的一次活动开始</h1>
+<p>管理自己的运动目标、饮食和身体记录。先连接你的个人空间。</p>
+<form id="login-form"><label>个人访问令牌<input id="token" type="password" required autocomplete="off" maxlength="128"></label><button>连接我的空间</button></form>
+<p class="hint">令牌由本机账户管理入口提供，只在本页内存中使用；刷新后需重新连接。不要填入模型密钥。</p></section>
+<div id="workspace" hidden>
+<nav aria-label="功能"><button data-tab="chat" class="selected">对话</button><button data-tab="plan">计划与进度</button><button data-tab="activity">活动记录</button><button data-tab="profile">目标与偏好</button><button data-tab="media">图片与视频</button><button data-tab="domain">身体与饮食记录</button></nav>
+<section id="chat" class="tab panel"><div class="title"><div><span class="eyebrow">随时记下来</span><h1>今天想做什么？</h1></div><button id="new-chat" class="secondary">新对话</button></div>
+<div class="row"><label>最近对话<select id="conversations" aria-label="最近对话"></select></label><button id="delete-chat" class="quiet">删除当前对话</button></div>
+<div id="messages" class="messages" aria-live="polite"></div>
+<form id="chat-form"><label for="message">告诉 FitLife<textarea id="message" rows="3" maxlength="4000" placeholder="例如：记录今天步行二十分钟、体重70公斤" required></textarea></label><div class="row"><small>新消息会撤销本对话旧的待确认草案。确认后才保存。</small><button id="send">发送</button></div></form>
+<button id="retry" class="secondary" hidden>重试刚才的请求</button></section>
+<section id="plan" class="tab panel" hidden><span class="eyebrow">安排与回顾</span><h1>本周，循序渐进</h1>
+<form id="week-form" class="row"><label>查看哪一周<input id="week" type="date" required></label><button>查看</button></form><p class="hint">请选择周一；可以在对话中提出新的计划或调整要求。</p>
+<div id="plan-content"></div></section>
+<section id="activity" class="tab panel" hidden><span class="eyebrow">每一步都算数</span><h1>活动记录</h1>
+<form id="activity-form" class="grid"><label>活动<select id="activity-id"><option value="walking">步行</option><option value="gentle_mobility">轻柔关节活动</option></select></label><label>日期<input id="activity-day" type="date" required></label><label>时长（分钟）<input id="activity-minutes" type="number" min="1" max="1440" required></label><button>检查并生成候选</button></form>
+<div id="activity-candidate"></div><hr><form id="records-form" class="row"><label>开始<input id="start" type="date" required></label><label>结束<input id="end" type="date" required></label><button class="secondary">查询记录</button></form><div id="records"></div></section>
+<section id="profile" class="tab panel" hidden><span class="eyebrow">以你的节奏</span><h1>目标与偏好</h1><p>这些是你确认保存的信息。单周临时调整不会改写这里的偏好。</p><div id="memory"></div>
+<form id="profile-form" class="grid"><label class="wide">运动目标<input id="goal" maxlength="500"></label><label>偏好活动<select id="preference"><option value="">暂不设置</option><option value="walking">步行</option><option value="gentle_mobility">轻柔关节活动</option></select></label><label>每周次数<input id="frequency" type="number" min="1" max="7"></label><label>每次分钟<input id="duration" type="number" min="1" max="180"></label><fieldset class="wide"><legend>可用的星期</legend><div id="weekdays" class="checks"></div></fieldset><button>检查偏好变更</button></form><div id="profile-candidate"></div></section>
+<section id="media" class="tab panel" hidden><span class="eyebrow">先识别，再核对</span><h1>图片与视频</h1>
+<p>识别可能出错，核对后才能提出保存候选。视频使用稀疏采样，不承诺整段准确计数。</p>
+<form id="media-form" class="grid"><label>处理任务<select id="media-task"><option value="nutrition_label">读取营养标签</option><option value="meal_photo">识别餐食照片</option><option value="workout_video">观察运动视频</option></select></label><label>素材<input id="media-file" type="file" accept="image/png,image/jpeg,video/mp4,video/webm" required></label><label class="wide">补充要求<input id="media-message" maxlength="2000"></label><small class="wide">图片最多8MB；视频最多80MB、3分钟。分析会调用模型并产生费用；请避免上传无关个人资料。</small><button>上传并开始分析</button></form>
+<div class="row"><h2>最近任务</h2><button id="media-refresh" class="secondary">刷新任务</button></div><div id="media-jobs" class="actions"></div><div id="media-preview"></div><div id="media-result"></div><div id="media-candidate"></div></section>
+<section id="domain" class="tab panel" hidden><h1>身体、饮食与训练明细</h1><p>这些记录与计划分钟分别统计。照片热量保留估算标记，未记录不代表实际为零。</p>
+<form id="domain-form" class="grid"><label>记录类型<select id="domain-type"><option value="body">身体测量</option><option value="steps">步数</option><option value="workout">训练明细</option><option value="meal">食物库核算餐食</option><option value="photo_meal">照片估算餐食</option><option value="food">食物资料</option></select></label><label>开始日期<input id="domain-start" type="date" required></label><label>结束日期<input id="domain-end" type="date" required></label><button>查询本人记录</button></form><div id="domain-output"></div></section>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<footer>提供一般运动与习惯管理辅助，不用于诊断、治疗或康复决策。健康风险无法判断时，请咨询专业人员。</footer>
+</main><script src="/assets/app.js" defer></script><script src="/assets/media.js" defer></script>
+</body></html>

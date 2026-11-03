@@ -1,0 +1,36 @@
+name: fitlife
+services:
+  app:
+    build: .
+    image: fitlife:0.6.0
+    init: true
+    ports:
+      - "127.0.0.1:8100:8100"
+    environment:
+      FITLIFE_DB_ENVIRONMENT: dev
+      FITLIFE_DB_HOST: host.docker.internal
+      FITLIFE_DB_PASSWORD_FILE: /run/secrets/mysql_password
+      FITLIFE_REDIS_HOST: host.docker.internal
+      FITLIFE_REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      FITLIFE_KEY_FILE: /run/secrets/model_key
+      FITLIFE_BASE_URL: ${FITLIFE_BASE_URL:-https://modelflare.dev/v1}
+      FITLIFE_MODEL: ${FITLIFE_MODEL:-gpt-5.6-sol}
+      FITLIFE_REASONING_EFFORT: ${FITLIFE_REASONING_EFFORT:-low}
+    secrets:
+      - mysql_password
+      - redis_password
+      - model_key
+    volumes:
+      - ./artifacts/container:/app/artifacts
+      - ./data/container:/app/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+secrets:
+  mysql_password:
+    environment: FITLIFE_DB_PASSWORD
+  redis_password:
+    environment: FITLIFE_REDIS_PASSWORD
+  model_key:
+    environment: MODELFLARE_API_KEY

@@ -1,0 +1,21 @@
+.idea/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+artifacts/
+data/
+*.egg-info/
+*.db
+*.sqlite*
+*.pem
+*.key
+config/*
+!config/*.example.json
+# 本机协作状态、原PyCharm示例及自动关机记录不属于发布源码。
+AGENTS.md
+STATE.md
+HISTORY.md
+main.py
