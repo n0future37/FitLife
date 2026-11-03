@@ -42,6 +42,9 @@ jobs:
       - run: python -m ruff check fitlife migrations tests scripts
       - run: python -m ruff format --check fitlife migrations tests scripts
       - run: python -m pytest -p pytest_asyncio.plugin --integration --junitxml=artifacts/tests/ci.xml
+      - run: |
+          python -m pip freeze > artifacts/tests/python-packages.txt
+          python -VV > artifacts/tests/python-runtime.txt
       - run: python -m fitlife.evaluate --split dev
       - run: python -m fitlife.evaluate --split holdout
       - run: python -m fitlife.evaluate_multi --split dev
@@ -60,4 +63,5 @@ jobs:
             artifacts/multi-evaluations/
             artifacts/task-evaluations/
             artifacts/process-checks/
+            artifacts/runs/
           retention-days: 14
