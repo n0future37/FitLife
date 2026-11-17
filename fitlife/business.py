@@ -15,7 +15,15 @@ from sqlalchemy.orm import sessionmaker
 from fitlife.database import Activity, AgentRequest, PendingAction, Plan, Profile, User
 
 ActivityId = Literal["walking", "gentle_mobility"]
-Weekday = Annotated[int, Field(strict=True, ge=0, le=6)]
+Weekday = Annotated[
+    int,
+    Field(
+        strict=True,
+        ge=0,
+        le=6,
+        description="星期编号：0周一、1周二、2周三、3周四、4周五、5周六、6周日；不是ISO的1到7。",
+    ),
+]
 
 
 def utcnow():

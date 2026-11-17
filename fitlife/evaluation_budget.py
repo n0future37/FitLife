@@ -173,6 +173,11 @@ class PaidBudget:
         budget = self
 
         class Budgeted:
+            network_model = True
+
+            def __init__(self):
+                self.settings = settings
+
             async def complete(self, instructions, items, tools):
                 index = budget.reserve(settings, instructions, items, tools)
                 started = time.perf_counter()

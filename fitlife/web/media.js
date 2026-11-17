@@ -43,12 +43,22 @@ async function showMediaJob(id){
     readResult=()=>({...r,items:rows.filter(x=>x.name.value.trim()).map(x=>({name:x.name.value.trim(),amount_g:numberValue(x.amount),estimated_energy_kcal:numberValue(x.energy)}))});
     recordData=()=>({record_date:day.value,meal_type:mealType.value.trim(),items:readResult().items,source:"vision_estimate_user_confirmed"});
   }else{
-    const r=job.result;r.observations.forEach(o=>parent.append(element("p",`${o.start_sec}–${o.end_sec} 秒：${o.name}；${o.observation}。稀疏采样不提供整段准确次数。`)));
-    const name=inputField(form,"要记录的训练名称",r.observations[0]?.name||""),day=inputField(form,"训练日期",today,"date"),duration=inputField(form,"本人确认的实际分钟（未知留空）",null,"number"),feedback=inputField(form,"本人训练反馈","");
-    readResult=()=>r;recordData=()=>({record_date:day.value,items:[{category:"其他",name:name.value,duration_min:numberValue(duration)}],feedback:feedback.value||null});
+    const r=job.result,c=r.counting;
+    if(c){
+      parent.append(element("p",c.repetitions===null?"画面不足以可靠计数，请自行核对。":`自动估计 ${c.exercise_name} ${c.repetitions} 次，请逐次核对。`));
+      parent.append(element("p",`时间轴${c.full_timeline_processed?"已完整处理":"未完整处理"}；计数信号覆盖率 ${(100*c.pose_coverage).toFixed(1)}%。不作动作安全或发力判断。`));
+      if(c.config.shots?.count>1)parent.append(element("p",`检测到 ${c.config.shots.count} 个镜头，分别统计可见往返；无法识别是否为回放，请核对。`));
+      const details=element("details"),summary=element("summary","查看自动检测到的完整周期");details.append(summary);c.cycles.forEach((cycle,index)=>details.append(element("p",`第 ${index+1} 次：${cycle.start_sec}–${cycle.end_sec} 秒`)));parent.append(details);
+    }
+    r.observations.forEach(o=>parent.append(element("p",`${o.start_sec}–${o.end_sec} 秒：${o.name}；${o.observation}${c?"":"。稀疏采样不提供整段准确次数"}`)));
+    const name=inputField(form,"要记录的训练名称",c?.exercise_name||r.observations[0]?.name||""),day=inputField(form,"训练日期",today,"date"),duration=inputField(form,"本人确认的实际分钟（未知留空）",null,"number"),reps=c?inputField(form,"本人核对的总次数（可修改，未知留空）",c.repetitions,"number"):null,feedback=inputField(form,"本人训练反馈","");
+    readResult=()=>r;recordData=()=>{
+      const count=reps?numberValue(reps):null;if(count!==null&&(!Number.isInteger(count)||count<0||count>10000))throw new Error("次数必须是0到10000的整数。");
+      return {record_date:day.value,items:[{category:c?"力量":"其他",name:name.value,duration_min:numberValue(duration),...(c?{reps:count===null?null:String(count)}:{})}],feedback:feedback.value||null};
+    };
   }
   const review=element("button",job.reviewed?"更新核对结果":"我已核对，保存核对结果");review.type="submit";form.append(review);
-  form.onsubmit=event=>{event.preventDefault();action(review,async()=>{await api(`/media/jobs/${id}/review`,"PATCH",{version:job.version,result:readResult()});await showMediaJob(id);await loadMediaJobs();});};
+  form.onsubmit=event=>{event.preventDefault();action(review,async()=>{const videoDraft=job.task==="workout_video"?[...form.querySelectorAll("input")].map(input=>input.value):null;await api(`/media/jobs/${id}/review`,"PATCH",{version:job.version,result:readResult()});await showMediaJob(id);if(videoDraft&&mediaSelected===id){document.querySelectorAll("#media-result form input").forEach((input,index)=>{input.value=videoDraft[index]??input.value;});}await loadMediaJobs();});};
   if(job.reviewed){
     const propose=element("button","生成待确认记录","secondary");propose.type="button";form.append(propose);
     propose.onclick=()=>action(propose,async()=>{candidate(await api(`/media/jobs/${id}/actions`,"POST",{version:job.version,data:recordData()},crypto.randomUUID()),$("media-candidate"));});
@@ -57,12 +67,16 @@ async function showMediaJob(id){
 }
 $("media-form").onsubmit=event=>{event.preventDefault();action(event.submitter,async()=>{
   const file=$("media-file").files[0];if(!file)throw new Error("请选择素材。");const task=$("media-task").value,kind=task==="workout_video"?"video":"image";
+  if(task==="workout_video"&&!$("media-exercise").value)throw new Error("请先选择视频中的动作，其他动作请选择仅观察。");
   if(file.size>(kind==="image"?8:80)*1024*1024)throw new Error("图片最多8MB，视频最多80MB。");
   const response=await fetch(`/media/uploads?kind=${kind}`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/octet-stream"},body:file});
   if(!response.ok)throw new Error("上传未完成，请检查格式、大小和视频时长。");const asset=await response.json();
-  const job=await api(`/media/${asset.asset_id}/jobs`,"POST",{task,message:$("media-message").value},crypto.randomUUID());
+  const exercise=$("media-exercise").value;
+  const job=await api(`/media/${asset.asset_id}/jobs`,"POST",{task,message:$("media-message").value,...(task==="workout_video"&&exercise!=="observe"?{count_exercise:exercise}:{})},crypto.randomUUID());
   $("media-candidate").replaceChildren();await showMediaJob(job.job_id);await loadMediaJobs();
 });};
 $("media-refresh").onclick=()=>action($("media-refresh"),loadMediaJobs);
 $("domain-form").onsubmit=event=>{event.preventDefault();action(event.submitter,async()=>{const data=await api(`/domain-records/${$("domain-type").value}?start_date=${$("domain-start").value}&end_date=${$("domain-end").value}`);const parent=$("domain-output");parent.replaceChildren(element("p",data.note||"查询结果"));data.records.forEach(r=>{const row=element("div",undefined,"candidate");renderOperation("domain_record",{record_type:r.record_type,values:r.values},row);const remove=element("button","删除这条记录","quiet");row.append(remove);remove.onclick=()=>action(remove,async()=>candidate(await api(`/domain-records/${r.id}/deletion-actions`,"POST",{},crypto.randomUUID()),row));parent.append(row);});if(!data.records.length)parent.append(element("p","此范围暂无记录，不代表实际没有活动或摄入。"));});};
 $("domain-start").value=$("domain-end").value=today;
+
+$("media-task").addEventListener("change",()=>{$("media-exercise-label").hidden=$("media-task").value!=="workout_video";});

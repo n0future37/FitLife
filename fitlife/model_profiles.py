@@ -13,16 +13,34 @@ class ModelProfile(BaseModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,39}$")
     provider: str = Field(min_length=1, max_length=100)
     base_url: str
-    api_family: Literal["responses", "chat"] = "responses"
+    api_family: Literal["responses", "chat", "ollama"] = "responses"
     model: str = Field(min_length=1, max_length=150)
     key_env: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
     key_file: Path | None = None
     capabilities: frozenset[Literal["text", "tools", "images"]] = frozenset({"text", "tools"})
     reasoning_effort: str | None = None
+    request_timeout: float | None = Field(default=None, gt=0, le=120)
+    free_only: bool = False
+    enable_thinking: bool | None = None
+    thinking_budget: int | None = Field(default=None, ge=128, le=32768)
+    temperature: float | None = Field(default=None, ge=0, le=2)
 
     @model_validator(mode="after")
     def safe_endpoint(self):
         url = urlsplit(self.base_url)
+        if (self.enable_thinking is not None or self.thinking_budget is not None) and (
+            self.provider != "siliconflow" or self.api_family != "chat"
+        ):
+            raise ValueError("THINKING_EXTENSION_REQUIRES_SILICONFLOW_CHAT")
+        if self.thinking_budget is not None and self.enable_thinking is not True:
+            raise ValueError("THINKING_BUDGET_REQUIRES_ENABLED_THINKING")
+        if self.free_only and (
+            self.provider != "openrouter"
+            or self.api_family != "chat"
+            or self.base_url.rstrip("/") != "https://openrouter.ai/api/v1"
+            or not self.model.endswith(":free")
+        ):
+            raise ValueError("FREE_ONLY_REQUIRES_OPENROUTER_FREE_MODEL")
         if url.username or url.password or url.query or url.fragment:
             raise ValueError("URL_MUST_NOT_CONTAIN_CREDENTIALS")
         if not url.hostname or (
@@ -35,6 +53,12 @@ class ModelProfile(BaseModel):
             raise ValueError("HTTPS_OR_LOCAL_ENDPOINT_REQUIRED")
         if "text" not in self.capabilities:
             raise ValueError("TEXT_OUTPUT_REQUIRED")
+        if self.api_family == "ollama" and (
+            url.hostname not in {"127.0.0.1", "localhost", "host.docker.internal"}
+            or self.reasoning_effort not in {None, "none"}
+            or "images" in self.capabilities
+        ):
+            raise ValueError("OLLAMA_LOCAL_NON_THINKING_ONLY")
         return self
 
 
@@ -45,6 +69,7 @@ def profiles(settings):
         key_env=settings.key_env,
         key_file=settings.key_file,
         reasoning_effort=settings.reasoning_effort,
+        temperature=settings.temperature,
     )
     default = {
         "standard": ModelProfile(
@@ -59,6 +84,16 @@ def profiles(settings):
             model=settings.model,
             capabilities=frozenset({"text", "images"}),
             **common,
+        ),
+        "local": ModelProfile(
+            name="local",
+            provider="ollama",
+            base_url="http://127.0.0.1:11435",
+            api_family="ollama",
+            model="qwen3:4b-instruct-2507-q4_K_M",
+            key_env="LOCAL_UNUSED",
+            capabilities=frozenset({"text", "tools"}),
+            request_timeout=45,
         ),
     }
     if settings.model_profiles_file:
@@ -105,5 +140,10 @@ def configured(settings, profile):
             "api_family": profile.api_family,
             "model_capabilities": profile.capabilities,
             "reasoning_effort": profile.reasoning_effort,
+            "request_timeout": profile.request_timeout or settings.request_timeout,
+            "free_only": profile.free_only,
+            "enable_thinking": profile.enable_thinking,
+            "thinking_budget": profile.thinking_budget,
+            "temperature": profile.temperature,
         }
     )

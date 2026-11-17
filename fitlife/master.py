@@ -5,19 +5,22 @@ import copy
 import json
 import time
 from dataclasses import replace
+from datetime import date, timedelta
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-from fitlife.agent import PROJECT_ROOT, call_tool, candidate_response, execute
+from fitlife.agent import execute
+from fitlife.candidates import finalize_candidates
 from fitlife.execution import ExecutionError, Ledger, complete
+from fitlife.intent_constraints import activity_logging_scope
 from fitlife.model import create_model
 from fitlife.model_profiles import configured, resolve
+from fitlife.orchestration_contract import (
+    VERSION,
+    bind_plan,
+    bind_request_inventory,
+    repair_feedback,
+)
 from fitlife.registry import DOMAIN_PROMPTS, DOMAIN_READ_TOOLS, DOMAIN_TOOLS
 from fitlife.routing import (
-    Plan,
-    Requirements,
-    check_coverage,
     execution_order,
     invalid_range,
     json_object,
@@ -32,19 +35,24 @@ INVENTORY = (
     "跨领域最终综合归main，不能把main列为唯一领域。一般能力解释或安全边界交付交给exercise。"
     "每项唯一id、domain、kind、text、required_tools（仅不可省略的只读依赖；写工具交给子Agent选择，填[]）。"
     "步行/轻柔活动分钟记录用propose_activity；步数用record_steps_tool；详细力量/有氧训练明细用record_workout_tool。"
+    "目标/偏好维护属于画像，不等于生成周计划；只读硬依赖不能填写写工具。"
+    "仅记录实际步行/轻柔活动时，缺少实际时长只问时长，不列计划/进度/训练档案读取依赖。"
+    "计划对应get_current_plan，步行分钟等活动记录对应query_activities；"
+    "基于活动调整用get_plan_adjustment_context，不把这些记录误当lookup_workouts_tool训练明细。"
+    "只有明确要求力量/训练明细时才选择lookup_workouts_tool。不要添加用户未要求的确认性检索。"
+    "需要跨域事实时，分别为实际读取者列任务；接收方只消费前序证据，不列外域工具。"
     "保留日期范围、用户限制和依赖依据，历史只解释本轮指代，不重复旧任务、不添加额外BMI/诊断。"
     "工具目录为权限边界，不能编造工具。只输出一个JSON对象："
     '{"requirements":[{"id":"q1","domain":"body","kind":"query","text":"...","required_tools":["lookup_body_tool"]}]}。'
 )
 PLANNER = (
-    "根据原题及独立任务清单规划三个领域Agent。只输出JSON，字段agents/tasks/depends_on/covers。"
-    "agents只含body/diet/exercise，每个最多一次；tasks为领域到任务的字典。"
-    "depends_on为领域到前序领域数组。真正需要前序事实的建议才依赖，不因并列查询制造依赖。"
-    "禁止自依赖/循环/不存在的领域。covers必须精确覆盖每个清单id一次，按其原领域归属，"
-    "main是最终综合归属，可出现在covers，不能出现在agents/tasks/depends_on。"
-    "缺数据或前序失败仍须补问或解释限制，不把error说成无记录；不得省略任何交付。"
-    '示例：{"agents":["body","exercise"],"tasks":{"body":"查询身体事实","exercise":"根据身体事实给一般建议"},'
-    '"depends_on":{"body":[],"exercise":["body"]},"covers":{"body":["q1"],"exercise":["d1"]}}。'
+    "根据原题及独立任务清单规划三个领域Agent。只输出JSON，字段tasks/depends_on。"
+    "服务端按清单构造agents/covers，你只写每个已选body/diet/exercise领域的任务与依赖。"
+    "tasks必须包含每个已选领域，不能新增领域。main仅在最后综合，不出现在tasks/depends_on。"
+    "需要前序事实的建议才依赖，不因并列查询制造依赖。禁止自依赖/循环/未知领域。"
+    "清单的evidence_dependencies是服务端绑定，必须保留；前序错误不能当作无记录。"
+    '示例：{"tasks":{"body":"查询身体事实","exercise":"结合前序身体事实与训练档案回答"},'
+    '"depends_on":{"body":[],"exercise":["body"]}}。'
 )
 SYNTHESIS = (
     "你是FitLife主Agent综合步骤，只根据原题、任务清单、实际子Agent证据和结果完成回答。"
@@ -56,10 +64,10 @@ SYNTHESIS = (
 )
 
 
-async def execute_master(message, default_model, settings, trace, context, model_factory=None):
-    import sys
-
-    ledger = Ledger()
+async def execute_master(
+    message, default_model, settings, trace, context, model_factory=None, *, ledger=None
+):
+    ledger = ledger if ledger is not None else Ledger()
     started = time.perf_counter()
     models = {}
     timings = {}
@@ -106,10 +114,11 @@ async def execute_master(message, default_model, settings, trace, context, model
         finally:
             for event in local:
                 event["stage"] = label
-                event["profile"] = model_name or "standard"
-                event["requested_model"] = resolve(
-                    settings, model_name or "standard", capability="text"
-                ).model
+                event.setdefault("profile", model_name or "standard")
+                event.setdefault(
+                    "requested_model",
+                    resolve(settings, model_name or "standard", capability="text").model,
+                )
             trace.extend(local)
             timings[label] = round(timings.get(label, 0) + time.perf_counter() - t, 3)
 
@@ -120,13 +129,15 @@ async def execute_master(message, default_model, settings, trace, context, model
             raw = await stage(label, prompt, payload, active_model)
             try:
                 return parser(json_object(raw))
-            except ValueError:
+            except ValueError as exc:
+                feedback = repair_feedback(exc, label)
                 trace.append(
                     {
                         "kind": "orchestration_validation",
                         "stage": label,
                         "attempt": attempt + 1,
                         "error_code": "INVALID_PLAN_OR_COVERAGE",
+                        "validation": feedback,
                     }
                 )
                 if attempt:
@@ -134,7 +145,8 @@ async def execute_master(message, default_model, settings, trace, context, model
                 payload = {
                     **payload,
                     "invalid_response": raw,
-                    "repair": "依据原题修复JSON结构、真实工具归属和完整覆盖，不能删除用户任务。",
+                    "validation": feedback,
+                    "repair": "按具体错误修复；保持全部用户任务，不能新增工具权限或省略读取义务。",
                 }
 
     try:
@@ -144,33 +156,54 @@ async def execute_master(message, default_model, settings, trace, context, model
                 "answer": clarification,
                 "end_reason": "completed",
                 "steps": 0,
-                "orchestration_version": "fit-m09-mysql-v1",
+                "orchestration_version": VERSION,
             }
         day = context.server_env["FITLIFE_TRUSTED_REQUEST_DAY"]
-        date_prompt = f"本轮上海日期：{day}。以本轮原始请求日期为准，不以历史查询日期代替今天。"
+        request_day = date.fromisoformat(day)
+        this_monday = request_day - timedelta(days=request_day.weekday())
+        date_prompt = (
+            f"本轮上海日期：{day}；本周星期一：{this_monday.isoformat()}；"
+            f"下周星期一：{(this_monday + timedelta(days=7)).isoformat()}。"
+            "以本轮原始请求日期为准，不以历史查询日期代替今天。"
+        )
         inventory = await structured(
             "router",
             INVENTORY
             + date_prompt
             + json.dumps({k: sorted(v) for k, v in DOMAIN_TOOLS.items()}, ensure_ascii=False),
             {"message": message, "history": list(context.history)},
-            Requirements.model_validate,
+            lambda data: bind_request_inventory(data, message),
             settings.router_model,
+        )
+        logging_scope = activity_logging_scope(message)
+        if logging_scope is not None:
+            narrowed = []
+            for req in inventory.requirements:
+                if req.domain == "exercise":
+                    reads = [t for t in req.required_tools if t in logging_scope]
+                    removed = sorted(set(req.required_tools) - set(reads))
+                    if removed:
+                        inventory.bindings.append(
+                            {"kind": "activity_logging_scope", "removed_reads": removed}
+                        )
+                    req = req.model_copy(update={"required_tools": reads})
+                narrowed.append(req)
+            inventory = replace(
+                inventory,
+                inventory=inventory.inventory.model_copy(update={"requirements": narrowed}),
+            )
+        trace.append(
+            {
+                "kind": "inventory_binding",
+                "version": VERSION,
+                "bindings": inventory.bindings,
+                "evidence_dependencies": inventory.evidence_edges,
+            }
         )
         requirements = inventory.requirements
         domains = list(dict.fromkeys(r.domain for r in requirements if r.domain != "main"))
         if len(domains) == 1:
-            plan = Plan(
-                agents=domains,
-                tasks={domains[0]: message},
-                depends_on={},
-                covers={
-                    name: [r.id for r in requirements if r.domain == name]
-                    for name in {*domains, "main"}
-                    if any(r.domain == name for r in requirements)
-                },
-            )
-            check_coverage(plan, requirements)
+            plan = bind_plan({"tasks": {domains[0]: message}}, inventory)
         else:
             plan = await structured(
                 "planning",
@@ -181,11 +214,17 @@ async def execute_master(message, default_model, settings, trace, context, model
                     if context.orchestration == "master_independent"
                     else ""
                 ),
-                {"message": message, "requirements": inventory.model_dump()["requirements"]},
-                lambda data: check_coverage(Plan.model_validate(data), requirements),
+                {
+                    "message": message,
+                    "requirements": inventory.model_dump()["requirements"],
+                    "evidence_dependencies": inventory.evidence_edges,
+                },
+                lambda data: bind_plan(data, inventory),
                 settings.planner_model,
             )
         if context.orchestration == "master_independent":
+            if inventory.evidence_edges:
+                raise ExecutionError("CROSS_DOMAIN_EVIDENCE_REQUIRES_DEPENDENCY_MODE")
             plan = plan.model_copy(update={"depends_on": {}})
         order = execution_order(plan)
         trace.append(
@@ -231,8 +270,10 @@ async def execute_master(message, default_model, settings, trace, context, model
             )
             relevant = [r for r in requirements if r.domain == name]
             exposed = DOMAIN_TOOLS[name]
-            if required and all(r.kind == "query" for r in relevant):
-                exposed = required
+            if all(r.kind == "query" for r in relevant):
+                exposed = required or (exposed & DOMAIN_READ_TOOLS)
+            if name == "exercise" and logging_scope is not None:
+                exposed &= logging_scope
             selection = select_model(settings, plan, name, requirements, context.history)
             chosen = resolve(settings, selection["model"], capability="tools")
             selection.update(
@@ -263,11 +304,13 @@ async def execute_master(message, default_model, settings, trace, context, model
                     "domain": name,
                     "task": plan.tasks[name],
                     "obligations": [r.text for r in requirements if r.domain == name],
+                    "required_reads": sorted(required),
                     "dependency_context": dependencies,
                 },
                 ensure_ascii=False,
             )
             t = time.perf_counter()
+            status, result = "error", {"error_code": "CHILD_CANCELLED"}
             try:
                 async with gate:
                     result = await execute(
@@ -287,21 +330,27 @@ async def execute_master(message, default_model, settings, trace, context, model
                     "error_code": safe_error(exc),
                 }
                 status = "error"
-            for event in local_trace:
-                event["stage"] = name
-            trace.extend(local_trace)
-            trace.append(
-                {
-                    "kind": "delegate_agent",
-                    "agent": name,
-                    "depends_on": parents,
-                    "outcome": status,
-                    "error_code": result.get("error_code") if status == "error" else None,
-                    "selection": selection,
-                    "seconds": round(time.perf_counter() - t, 3),
-                }
-            )
-            completed[name] = {"status": status, "result": result, "evidence": observations}
+            except asyncio.CancelledError:
+                result = {"answer": "领域执行已取消。", "error_code": "CHILD_CANCELLED"}
+                raise
+            finally:
+                for event in local_trace:
+                    event["stage"] = name
+                trace.extend(local_trace)
+                trace.append(
+                    {
+                        "kind": "delegate_agent",
+                        "agent": name,
+                        "depends_on": parents,
+                        "outcome": status,
+                        "error_code": result.get("error_code") if status == "error" else None,
+                        "selection": selection,
+                        "seconds": round(time.perf_counter() - t, 3),
+                        "started_ns": int(t * 1_000_000_000),
+                        "finished_ns": time.perf_counter_ns(),
+                    }
+                )
+                completed[name] = {"status": status, "result": result, "evidence": observations}
             return completed[name]
 
         t = time.perf_counter()
@@ -344,69 +393,21 @@ async def execute_master(message, default_model, settings, trace, context, model
             "answer": answer,
             "end_reason": "partial_completed" if failed else "completed",
             "steps": ledger.steps,
-            "orchestration_version": "fit-m09-mysql-v1",
+            "orchestration_version": VERSION,
             "agents": order,
             "stage_seconds": timings,
             "domain_outcomes": {name: value["status"] for name, value in completed.items()},
         }
         if proposals and not failed:
-            patches = [op for op in proposals if op["kind"] == "profile_patch"]
-            if len(patches) > 1:
-                merged = {}
-                for op in patches:
-                    if any(k in merged and merged[k] != v for k, v in op["payload"].items()):
-                        return {
-                            **response,
-                            "answer": (
-                                "不同领域的画像变更存在冲突，请明确希望保存的值。本轮未生成候选。"
-                            ),
-                        }
-                    if op["base_profile_version"] != patches[0]["base_profile_version"]:
-                        raise ExecutionError("PROFILE_VERSION_CONFLICT")
-                    merged.update(op["payload"])
-                proposals = [op for op in proposals if op["kind"] != "profile_patch"]
-                proposals.append({**patches[0], "payload": merged})
-            # Only the master persists a single bound bundle. Children never write business facts.
-            env = {k: v for k, v in context.server_env.items() if k != "FITLIFE_COLLECT_CANDIDATES"}
-            server = StdioServerParameters(
-                command=sys.executable,
-                args=["-m", context.server_module],
-                cwd=str(PROJECT_ROOT),
-                env={"PYTHONIOENCODING": "utf-8", **env},
+            response = await finalize_candidates(
+                proposals,
+                response,
+                context,
+                settings,
+                trace,
+                ledger,
+                answer_prefix=answer if len(order) > 1 else None,
             )
-            if ledger.tool_calls >= settings.max_tool_calls:
-                raise ExecutionError("TOOL_BUDGET_EXHAUSTED")
-            ledger.tool_calls += 1
-            root_context = replace(context, allowed_tools=frozenset({"propose_action_bundle"}))
-            async with stdio_client(server) as (read, write):
-                async with ClientSession(read, write) as session:
-                    await session.initialize()
-                    candidate = await call_tool(
-                        session,
-                        {
-                            "name": "propose_action_bundle",
-                            "arguments": json.dumps({"operations": proposals}, ensure_ascii=False),
-                            "call_id": "master-bundle",
-                        },
-                        root_context,
-                        settings,
-                        trace,
-                        ledger.steps,
-                    )
-            if "action_id" not in candidate:
-                if candidate.get("error_code") == "BUNDLE_CONSTRAINT_CONFLICT":
-                    return {
-                        **response,
-                        "answer": (
-                            "临时约束与计划草案冲突，本轮未生成可确认候选，也未保存。"
-                            "请明确本次需要例外还是调整计划。"
-                        ),
-                        "termination_code": "NEEDS_CLARIFICATION",
-                    }
-                raise ExecutionError("BUNDLE_PERSIST_FAILED")
-            response.update(candidate_response(candidate, ledger.steps))
-            if len(order) > 1:
-                response["answer"] = answer + "\n\n" + response["answer"]
         elif failed:
             response["answer"] = (
                 answer + "\n\n部分领域未完成，本轮没有保存变更，也未生成可确认的整份候选。"

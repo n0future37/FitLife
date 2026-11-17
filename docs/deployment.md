@@ -1,6 +1,6 @@
 # 本机、容器与CI交付
 
-本机命令以README为准。迁移head为0008_memory_scope；开发/测试库实际迁移和用户配置以STATE为准。
+本机命令以README为准。迁移head为0009_conversation_titles；开发/测试库实际迁移和用户配置以STATE为准。
 开发凭据已由用户在本机隐藏配置，manage仍可签发新的本机个人令牌。server不自动迁移，版本不匹配拒绝启动。
 不用root做业务连接，不自动接管没有fl_alembic_version的旧表。
 
@@ -70,3 +70,20 @@ CI MySQL/Redis为作业内全新一次性服务，仅回环端口；空密码roo
 依据：[Docker Secrets](https://docs.docker.com/compose/how-tos/use-secrets/)、
 [Docker Python指南](https://docs.docker.com/guides/python)、
 [GitHub服务容器](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)。
+
+## 2026-11-03完整度收尾
+
+当前源码Windows/Linux各125项通过，公开模型配置按明确清单进入镜像；配置只有环境变量名称，不含密钥值。新镜像fitlife:readiness-v1和fitlife:test-readiness-v1，旧0.6标签保留。本轮未上传或运行新云CI，结果和首次失败见[核查报告](readiness-v1.md)。
+
+本轮Linux使用固定模型和测试服务，不证明容器内真实硅基流动/本地故障切换已配置。容器内local.base_url的127.0.0.1指向容器自身，连接宿主Ollama时需另行设置可达地址；Windows本地兜底已有独立实测。
+
+
+## 2026-11-16多模态运行增量
+
+当前Docker默认runtime及test阶段包含`.[media]`（MediaPipe、NumPy、OpenCV）与系统视频库。
+Compose额外只读挂载`./data/pose-models:/app/data/pose-models:ro`；姿态权重不烘焙进镜像，
+先执行`python -m fitlife.pose_setup --download`并核对固定SHA256。
+图片分析仍需已有视觉模型配置；指定动作计数在独立本地子进程执行，不读取云模型密钥。
+复验命令`python -m scripts.media_container_check`使用独立项目和`fitlife:media-v2`、
+`fitlife:test-media-v2`新标签，保留历史标签；仅操作测试库合成用户。
+真实精度与当前验证证据见[media-v2](media-v2.md)，不得用旧125项/Linux/云CI代替本次结果。

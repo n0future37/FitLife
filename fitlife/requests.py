@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from fitlife.business import BusinessError, today, utcnow
 from fitlife.constraints import memory_scope
-from fitlife.conversations import history, owned
+from fitlife.conversations import history, normalize_title, owned, title_seed
 from fitlife.database import AgentRequest, PendingAction, Profile, User
 
 
@@ -98,10 +98,11 @@ def claim(engine, actor, key, message, lease_seconds, conversation_id=None):
             "nonce": row.nonce,
             "created_at": row.created_at,
             "history": row.context or [],
+            "title_seed": title_seed(session, actor, conversation) if conversation else None,
         }
 
 
-def finish(engine, actor, request_id, nonce, response, successful):
+def finish(engine, actor, request_id, nonce, response, successful, generated_title=None):
     with Session(engine) as session, session.begin():
         session.get(User, str(actor.user_id), with_for_update=True)
         row = session.get(AgentRequest, request_id, with_for_update=True)
@@ -113,6 +114,10 @@ def finish(engine, actor, request_id, nonce, response, successful):
                 raise BusinessError("REQUEST_SUPERSEDED")
             conversation.active_request_key = None
             conversation.updated_at = utcnow()
+            if successful and generated_title and conversation.title_source == "pending":
+                conversation.title = normalize_title(generated_title)
+                conversation.title_source = "agent"
+                conversation.title_revision += 1
         row.status = "completed" if successful else "failed"
         row.response = response
 

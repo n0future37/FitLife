@@ -1,4 +1,4 @@
-"""本步只实现 Responses 协议；统一输出供执行器消费，不承诺任意平台兼容。"""
+"""Responses/Chat模型适配；平台扩展参数显式配置，不猜测兼容性。"""
 
 import os
 from dataclasses import dataclass, field
@@ -9,6 +9,8 @@ from openai import AsyncOpenAI
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from fitlife.chat_messages import chat_messages
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="FITLIFE_", extra="ignore")
@@ -18,10 +20,14 @@ class Settings(BaseSettings):
     key_env: str = "MODELFLARE_API_KEY"
     key_file: Path | None = None
     tool_policy: Literal["baseline", "direct_recording"] = "baseline"
-    orchestration: Literal["single", "master", "master_serial", "master_independent"] = "master"
-    routing_policy: Literal["fixed", "conservative"] = "conservative"
+    orchestration: Literal["single", "unified", "master", "master_serial", "master_independent"] = (
+        "master"
+    )
+    routing_policy: Literal["fixed", "conservative", "rules"] = "conservative"
+    routing_rules_file: Path | None = None
     model_profiles_file: Path | None = None
-    api_family: Literal["responses", "chat"] = "responses"
+    api_family: Literal["responses", "chat", "ollama"] = "responses"
+    free_only: bool = False
     model_capabilities: frozenset[str] = frozenset({"text", "tools", "images"})
     router_model: str | None = "fast"
     planner_model: str | None = None
@@ -34,6 +40,13 @@ class Settings(BaseSettings):
     master_run_timeout: float = Field(default=240, gt=0, le=600)
     master_token_units: int = Field(default=350000, ge=1000, le=1000000)
     reasoning_effort: str | None = None
+    enable_thinking: bool | None = None
+    thinking_budget: int | None = Field(default=None, ge=128, le=32768)
+    temperature: float | None = Field(default=None, ge=0, le=2)
+    fallback_profile: str | None = "local"
+    circuit_enabled: bool = True
+    circuit_failure_threshold: int = Field(default=2, ge=1, le=20)
+    circuit_cooldown: float = Field(default=30, gt=0, le=600)
     request_timeout: float = Field(default=45, gt=0, le=120)
     run_timeout: float = Field(default=100, gt=0, le=300)
     max_steps: int = Field(default=4, ge=1, le=8)
@@ -58,10 +71,32 @@ class Reply:
     request_id: str | None = None
 
 
+def free_request_options(settings):
+    if (
+        settings.provider != "openrouter"
+        or settings.api_family != "chat"
+        or settings.base_url.rstrip("/") != "https://openrouter.ai/api/v1"
+        or not settings.model.endswith(":free")
+    ):
+        raise ValueError("FREE_ONLY_REQUIRES_OPENROUTER_FREE_MODEL")
+    return {
+        "extra_body": {
+            "provider": {
+                "max_price": {"prompt": 0, "completion": 0, "request": 0, "image": 0},
+                "require_parameters": True,
+            }
+        }
+    }
+
+
 class ResponsesModel:
+    network_model = True
+
     def __init__(self, settings: Settings):
         import logging
 
+        if settings.free_only:
+            free_request_options(settings)
         for name in ("openai", "httpx", "httpx2"):
             logging.getLogger(name).setLevel(logging.WARNING)
         key = os.getenv(settings.key_env)
@@ -81,6 +116,8 @@ class ResponsesModel:
         if tools and "tools" not in self.settings.model_capabilities:
             raise ValueError("MODEL_TOOLS_NOT_SUPPORTED")
         options = {}
+        if self.settings.temperature is not None:
+            options["temperature"] = self.settings.temperature
         if self.settings.reasoning_effort:
             options["reasoning"] = {"effort": self.settings.reasoning_effort}
         response = await self.client.responses.create(
@@ -140,32 +177,27 @@ class ChatModel(ResponsesModel):
     async def complete(self, instructions, items, tools):
         if tools and "tools" not in self.settings.model_capabilities:
             raise ValueError("MODEL_TOOLS_NOT_SUPPORTED")
-        messages = [{"role": "system", "content": instructions}]
-        for item in items:
-            if item.get("type") == "function_call_output":
-                messages.append(
-                    {"role": "tool", "tool_call_id": item["call_id"], "content": item["output"]}
-                )
-            elif item.get("role"):
-                converted = dict(item)
-                if isinstance(converted.get("content"), list):
-                    parts = []
-                    for part in converted["content"]:
-                        if part["type"] == "input_text":
-                            parts.append({"type": "text", "text": part["text"]})
-                        elif part["type"] == "input_image":
-                            parts.append(
-                                {"type": "image_url", "image_url": {"url": part["image_url"]}}
-                            )
-                        else:
-                            raise ValueError("CHAT_INPUT_PART_NOT_SUPPORTED")
-                    converted["content"] = parts
-                messages.append(converted)
-            else:
-                raise ValueError("CHAT_INPUT_ITEM_NOT_SUPPORTED")
+        messages = chat_messages(instructions, items)
         options = {}
+        if self.settings.temperature is not None:
+            options["temperature"] = self.settings.temperature
         if self.settings.reasoning_effort:
             options["reasoning_effort"] = self.settings.reasoning_effort
+        if self.settings.free_only:
+            options.update(free_request_options(self.settings))
+        if self.settings.provider == "siliconflow":
+            options["max_tokens"] = self.settings.max_output_tokens
+            extra = {}
+            if self.settings.enable_thinking is not None:
+                extra["enable_thinking"] = self.settings.enable_thinking
+            if self.settings.thinking_budget is not None:
+                if self.settings.enable_thinking is not True:
+                    raise ValueError("THINKING_BUDGET_REQUIRES_ENABLED_THINKING")
+                extra["thinking_budget"] = self.settings.thinking_budget
+            if extra:
+                options["extra_body"] = extra
+        else:
+            options["max_completion_tokens"] = self.settings.max_output_tokens
         response = await self.client.chat.completions.create(
             model=self.settings.model,
             messages=messages,
@@ -174,7 +206,6 @@ class ChatModel(ResponsesModel):
                 for tool in tools
             ]
             or None,
-            max_completion_tokens=self.settings.max_output_tokens,
             **options,
         )
         choice = response.choices[0]
@@ -190,6 +221,8 @@ class ChatModel(ResponsesModel):
             continuation["tool_calls"] = [
                 c.model_dump(exclude_none=True) for c in message.tool_calls
             ]
+        if getattr(message, "reasoning_details", None):
+            continuation["reasoning_details"] = message.reasoning_details
         return Reply(
             text=message.content or "",
             calls=calls,
@@ -209,4 +242,8 @@ class ChatModel(ResponsesModel):
 
 
 def create_model(settings):
+    if settings.api_family == "ollama":
+        from fitlife.ollama_model import OllamaModel
+
+        return OllamaModel(settings)
     return ChatModel(settings) if settings.api_family == "chat" else ResponsesModel(settings)

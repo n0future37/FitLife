@@ -1,0 +1,63 @@
+{
+  "recorded_date": "2026-11-17",
+  "environment": "Windows / Python 3.12.16 / local MySQL 8.4 and Redis 7.4",
+  "regression": {
+    "tests": 172,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ruff": {
+    "check": "passed",
+    "format_check": "passed",
+    "formatted_files": 136
+  },
+  "ui": {
+    "chat": {
+      "status": "passed",
+      "checks": [
+        "token_login",
+        "multi_turn_candidate",
+        "confirm_then_activity_visible",
+        "safe_text_rendering",
+        "mobile_no_horizontal_overflow",
+        "no_javascript_exception",
+        "persisted_failed_request_retry_after_browser_reload",
+        "expired_token_logout_clears_local_private_state"
+      ],
+      "phase": "completed",
+      "fixture_cleanup": "verified"
+    },
+    "media": {
+      "status": "passed",
+      "checks": [
+        "private_upload_in_browser",
+        "background_fixed_vision_and_result_review",
+        "human_readable_candidate_and_explicit_confirmation",
+        "persisted_job_after_reload",
+        "mobile_no_horizontal_overflow",
+        "logout_clears_media_and_no_javascript_exception"
+      ],
+      "phase": "reload",
+      "fixture_cleanup": "verified"
+    }
+  },
+  "cloud_model_calls": 0,
+  "initial_environment_failure": "MySQL connection refused before Docker Desktop was started; initial failure report retained locally, full retry passed",
+  "screenshots": {
+    "chat-confirmation.png": {
+      "sha256": "82864cb363899791f7da2ae3903b01ca792292c4879c19cf18f783a3a5f84fa8",
+      "source": "synthetic UI fixture"
+    },
+    "activity-mobile.png": {
+      "sha256": "75fecef8df688acee55728d645a9a0d71dc11e459856aa3d471700dac0eb5787",
+      "source": "synthetic UI fixture"
+    },
+    "media-review.png": {
+      "sha256": "29b108cab7b0e37259687b76149d813411eb0263360e3e8e4cc82c1b2064bd18",
+      "source": "synthetic UI fixture"
+    }
+  },
+  "privacy": "No private records, raw user media, credentials, local traces or local account identifiers are included in this evidence summary",
+  "scope": "Software regression and deterministic UI checks; not real-model task or vision accuracy"
+}

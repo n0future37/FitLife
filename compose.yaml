@@ -23,6 +23,7 @@ services:
     volumes:
       - ./artifacts/container:/app/artifacts
       - ./data/container:/app/data
+      - ./data/pose-models:/app/data/pose-models:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     cap_drop: [ALL]

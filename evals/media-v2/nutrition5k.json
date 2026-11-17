@@ -1,0 +1,216 @@
+{
+  "version": "nutrition5k-real-subset-v1",
+  "created_at": "2026-11-16T13:14:40.891823+00:00",
+  "selection": "SHA256 fixed seed ranking within official depth train/test splits; first available unique rgb.png; no model outputs used",
+  "reference": "https://github.com/google-research-datasets/Nutrition5k",
+  "license": "CC BY 4.0 (official repository)",
+  "cases": [
+    {
+      "id": "dish_1562008429",
+      "split": "dev",
+      "official_split": "depth_train_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1562008429.png",
+      "image_sha256": "e29442e8b0543cf785e00aa09bbdbf12346b9e8c16fa6bb5b48fc8cde0f916d1",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562008429/rgb.png",
+      "truth": {
+        "calories_kcal": 94.465088,
+        "mass_g": 69.0,
+        "fat_g": 5.511408,
+        "carbs_g": 1.765067,
+        "protein_g": 9.056995,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1560366460",
+      "split": "dev",
+      "official_split": "depth_train_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1560366460.png",
+      "image_sha256": "b8d5b77d05c22442bcdc9d84eab73ef3ce2cc1b744185b302b835f6f83b0f268",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1560366460/rgb.png",
+      "truth": {
+        "calories_kcal": 330.740997,
+        "mass_g": 255.0,
+        "fat_g": 20.443512,
+        "carbs_g": 9.966405,
+        "protein_g": 27.0408,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1561575170",
+      "split": "dev",
+      "official_split": "depth_train_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1561575170.png",
+      "image_sha256": "d42dfa1db8f90f2cf8cbc10668687a45970ba93bc7e56a7a0a62c5efeb5fbe7a",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561575170/rgb.png",
+      "truth": {
+        "calories_kcal": 42.75,
+        "mass_g": 171.0,
+        "fat_g": 0.513,
+        "carbs_g": 8.55,
+        "protein_g": 3.078,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1562777566",
+      "split": "dev",
+      "official_split": "depth_train_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1562777566.png",
+      "image_sha256": "fdc2ab431f2fb2d14c640935064a1bcf25fb6ff34ef41bd1083e3b2b577c68af",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1562777566/rgb.png",
+      "truth": {
+        "calories_kcal": 263.003998,
+        "mass_g": 84.0,
+        "fat_g": 3.528,
+        "carbs_g": 46.619999,
+        "protein_g": 10.92,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1561667238",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1561667238.png",
+      "image_sha256": "3daffc57eb56b5dae0daba956e65aac82c6c449c93205bcb9ebeacd0299ce641",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1561667238/rgb.png",
+      "truth": {
+        "calories_kcal": 268.80484,
+        "mass_g": 165.0,
+        "fat_g": 12.344784,
+        "carbs_g": 15.250226,
+        "protein_g": 23.481403,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1565896745",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1565896745.png",
+      "image_sha256": "6818621ee1d156a30447574c0c4889803c1fd14cf681b92eb59dfb8585ad3a66",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1565896745/rgb.png",
+      "truth": {
+        "calories_kcal": 368.540344,
+        "mass_g": 244.0,
+        "fat_g": 25.222511,
+        "carbs_g": 10.737839,
+        "protein_g": 27.187071,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1563565354",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1563565354.png",
+      "image_sha256": "d5a94faa5bf7a14afcb14f832add4dd054891c9b574c84f8a1ee3b19288d7f3a",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563565354/rgb.png",
+      "truth": {
+        "calories_kcal": 272.315186,
+        "mass_g": 193.0,
+        "fat_g": 15.777068,
+        "carbs_g": 23.045525,
+        "protein_g": 20.039701,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1563984140",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1563984140.png",
+      "image_sha256": "75de382b0dde90d2d69ed7cadc71ec876005177bfe9404fb524fb75c8d18c580",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563984140/rgb.png",
+      "truth": {
+        "calories_kcal": 245.439987,
+        "mass_g": 472.0,
+        "fat_g": 0.944,
+        "carbs_g": 3.304,
+        "protein_g": 47.200001,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1565123783",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1565123783.png",
+      "image_sha256": "035438da366c95055214067e7bcc34e99c6b1f63e053ed6d6d70d17845533662",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1565123783/rgb.png",
+      "truth": {
+        "calories_kcal": 93.064995,
+        "mass_g": 35.0,
+        "fat_g": 3.29,
+        "carbs_g": 11.725,
+        "protein_g": 3.92,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1560444967",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1560444967.png",
+      "image_sha256": "85a2a0e55c605b7e6c7ab9762f0a2cb3b0dc618af3be93eed2f515c0f7f868fc",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1560444967/rgb.png",
+      "truth": {
+        "calories_kcal": 197.377884,
+        "mass_g": 252.0,
+        "fat_g": 10.071443,
+        "carbs_g": 23.811623,
+        "protein_g": 4.947491,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1563389626",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1563389626.png",
+      "image_sha256": "ac61f72444153008ee0d019e3061106b7322b000e9eaf60eacc8af4ef051cf76",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1563389626/rgb.png",
+      "truth": {
+        "calories_kcal": 498.620026,
+        "mass_g": 360.0,
+        "fat_g": 30.181793,
+        "carbs_g": 12.393457,
+        "protein_g": 45.326939,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    },
+    {
+      "id": "dish_1558375732",
+      "split": "heldout",
+      "official_split": "depth_test_ids.txt",
+      "image": "data\\media-eval-v2\\nutrition5k\\dish_1558375732.png",
+      "image_sha256": "6d08ce05ecb1f044d198ccb1d001c8dcfac0677cfc92e65431ab95a0fcd3d110",
+      "url": "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/imagery/realsense_overhead/dish_1558375732/rgb.png",
+      "truth": {
+        "calories_kcal": 45.540001,
+        "mass_g": 66.0,
+        "fat_g": 0.132,
+        "carbs_g": 11.88,
+        "protein_g": 0.462,
+        "metadata_file": "dish_metadata_cafe1.csv"
+      },
+      "truth_source": "official weighed ingredients and USDA-derived dish nutritional labels; not direct laboratory calorimetry"
+    }
+  ],
+  "availability_exclusions": [],
+  "labels_never_in_model_input": true,
+  "group_note": "official split preserves incremental scans of the same plate together"
+}

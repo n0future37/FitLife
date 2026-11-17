@@ -6,7 +6,7 @@ import hashlib
 import json
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
@@ -16,9 +16,11 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from fitlife.execution import ExecutionError, Ledger, complete
+from fitlife.intent_constraints import activity_logging_scope, weekday_conflict
 from fitlife.model import ScriptedModel, Settings, create_model
 from fitlife.model_profiles import configured, resolve
 from fitlife.registry import DOMAIN_READ_TOOLS
+from fitlife.tool_validation import INPUT_ERROR_CODES, input_issues
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROMPT_VERSION = "readonly-v1"
@@ -45,6 +47,11 @@ class RuntimeContext:
     orchestration: str = "single"
     required_tools: frozenset = frozenset()
     evidence_sink: list | None = field(default=None, repr=False, compare=False)
+    title_seed: tuple | None = field(default=None, repr=False)
+    history_policy: str = "recent"
+    original_request: str | None = field(default=None, repr=False, compare=False)
+    tool_schemas: dict = field(default_factory=dict, repr=False, compare=False)
+    proposal_sink: list | None = field(default=None, repr=False, compare=False)
 
 
 def candidate_response(candidate, step):
@@ -108,6 +115,31 @@ async def call_tool(session, call, context, settings, trace, step):
             }
         )
         return output
+    schema = context.tool_schemas.get(call["name"])
+    issues = input_issues(schema, arguments) if schema is not None else []
+    if issues:
+        output = {
+            "status": "error",
+            "error_code": "INVALID_TOOL_ARGUMENTS",
+            "retryable": False,
+            "invalid_parameters": issues,
+            "note": (
+                "按原题和工具Schema修正参数；日期用YYYY-MM-DD，不改变查询范围，不猜缺失业务值。"
+            ),
+        }
+        trace.append(
+            {
+                "kind": "tool",
+                "step": step,
+                "name": call["name"],
+                "executed": False,
+                "arguments": trace_arguments(context, call["name"], arguments),
+                "result": {"redacted": True} if context.private else output,
+                "is_error": True,
+                "seconds": 0,
+            }
+        )
+        return output
     retries = settings.readonly_tool_retries if call["name"] in READ_ONLY else 0
     for attempt in range(retries + 1):
         event = {
@@ -118,6 +150,7 @@ async def call_tool(session, call, context, settings, trace, step):
             "arguments": trace_arguments(context, call["name"], arguments),
             "is_error": True,
             "executed": True,
+            "started_ns": time.perf_counter_ns(),
         }
         trace.append(event)
         started = time.perf_counter()
@@ -143,13 +176,20 @@ async def call_tool(session, call, context, settings, trace, step):
                     output = json.loads(texts[0])
                 if not isinstance(output, dict):
                     raise ExecutionError("TOOL_RESULT_NOT_OBJECT")
+            if output.get("error_code") == "INVALID_WEEK_START":
+                output = {
+                    **output,
+                    "note": "week_start必须是原题目标周的星期一，YYYY-MM-DD；不能改变原题范围。",
+                }
             event.update(is_error=bool(result.isError) or output.get("status") == "error")
             if context.evidence_sink is not None and call["name"] in READ_ONLY:
                 context.evidence_sink.append(
                     {
                         "source_tool": call["name"],
                         "query": arguments,
-                        "status": "error"
+                        "status": "invalid_input"
+                        if output.get("error_code") in INPUT_ERROR_CODES
+                        else "error"
                         if result.isError or output.get("status") == "error"
                         else output.get("status", "ok"),
                         "data": output,
@@ -187,6 +227,7 @@ async def call_tool(session, call, context, settings, trace, step):
                 raise ExecutionError("TOOL_TIMEOUT") from None
         finally:
             event["seconds"] = round(time.perf_counter() - started, 3)
+            event["finished_ns"] = time.perf_counter_ns()
     raise ExecutionError("TOOL_RETRY_EXHAUSTED")
 
 
@@ -214,6 +255,13 @@ async def execute(
     ledger: Ledger | None = None,
 ) -> dict:
     context = context or RuntimeContext()
+    scope = activity_logging_scope(context.original_request)
+    if scope is not None and "propose_activity" in context.allowed_tools:
+        context = replace(
+            context,
+            allowed_tools=context.allowed_tools & scope,
+            required_tools=context.required_tools & scope,
+        )
     server = StdioServerParameters(
         command=sys.executable,
         args=["-m", context.server_module],
@@ -223,7 +271,9 @@ async def execute(
     items = [*context.history, {"role": "user", "content": message}]
     ledger = ledger if ledger is not None else Ledger()
     used_tools = set()
-    reminded = False
+    dependency_reminders = 0
+    argument_reminders = 0
+    invalid_arguments = set()
     async with stdio_client(server) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
@@ -241,6 +291,7 @@ async def execute(
             ]
             if {tool["name"] for tool in tools} != context.allowed_tools:
                 raise ExecutionError("TOOL_REGISTRATION_MISMATCH")
+            context = replace(context, tool_schemas={t["name"]: t["parameters"] for t in tools})
             for step in range(1, settings.max_steps + 1):
                 if ledger.steps >= settings.max_steps:
                     raise ExecutionError("STEP_BUDGET_EXHAUSTED")
@@ -259,9 +310,9 @@ async def execute(
                 if not reply.calls:
                     missing = context.required_tools - used_tools
                     if missing:
-                        if reminded:
+                        if dependency_reminders >= 2:
                             raise ExecutionError("REQUIRED_TOOL_NOT_USED")
-                        reminded = True
+                        dependency_reminders += 1
                         items.append(
                             {
                                 "role": "user",
@@ -274,6 +325,23 @@ async def execute(
                         raise ExecutionError("EMPTY_MODEL_REPLY")
                     return {"answer": reply.text, "end_reason": "completed", "steps": step}
                 items.extend(reply.continuation)
+                for call in reply.calls:
+                    try:
+                        key = (
+                            call["name"],
+                            json.dumps(json.loads(call["arguments"]), sort_keys=True),
+                        )
+                    except (ValueError, TypeError):
+                        key = (call["name"], call["arguments"])
+                    if key in invalid_arguments:
+                        trace.append(
+                            {
+                                "kind": "tool_repetition_blocked",
+                                "name": call["name"],
+                                "executed": False,
+                            }
+                        )
+                        raise ExecutionError("REPEATED_INVALID_TOOL_ARGUMENTS")
                 parallel = None
                 if len(reply.calls) > 1 and all(
                     c["name"] in READ_ONLY and c["name"] in context.allowed_tools
@@ -288,6 +356,73 @@ async def execute(
                 for index, call in enumerate(reply.calls):
                     if call["name"] not in context.allowed_tools:
                         raise ExecutionError("TOOL_NOT_ALLOWED")
+                    try:
+                        argument_key = (
+                            call["name"],
+                            json.dumps(json.loads(call["arguments"]), sort_keys=True),
+                        )
+                    except (ValueError, TypeError):
+                        argument_key = (call["name"], call["arguments"])
+                    if argument_key in invalid_arguments:
+                        trace.append(
+                            {
+                                "kind": "tool_repetition_blocked",
+                                "name": call["name"],
+                                "executed": False,
+                            }
+                        )
+                        raise ExecutionError("REPEATED_INVALID_TOOL_ARGUMENTS")
+                    conflict = weekday_conflict(context.original_request, call)
+                    if conflict:
+                        if argument_reminders >= 2:
+                            raise ExecutionError("EXPLICIT_ARGUMENT_CONFLICT")
+                        argument_reminders += 1
+                        trace.append(
+                            {
+                                "kind": "tool_argument_blocked",
+                                "step": step,
+                                "name": call["name"],
+                                "executed": False,
+                                "error_code": conflict["error_code"],
+                            }
+                        )
+                        items.append(
+                            {
+                                "type": "function_call_output",
+                                "call_id": call["call_id"],
+                                "output": json.dumps(conflict, ensure_ascii=False),
+                            }
+                        )
+                        continue
+                    missing = context.required_tools - used_tools
+                    if call["name"] not in READ_ONLY and missing:
+                        if dependency_reminders >= 2:
+                            raise ExecutionError("REQUIRED_TOOL_NOT_USED")
+                        dependency_reminders += 1
+                        trace.append(
+                            {
+                                "kind": "tool_dependency_blocked",
+                                "step": step,
+                                "name": call["name"],
+                                "executed": False,
+                                "required_reads": sorted(missing),
+                            }
+                        )
+                        items.append(
+                            {
+                                "type": "function_call_output",
+                                "call_id": call["call_id"],
+                                "output": json.dumps(
+                                    {
+                                        "status": "dependency_required",
+                                        "required_reads": sorted(missing),
+                                        "note": "按原题范围补齐读取后重提候选。",
+                                    },
+                                    ensure_ascii=False,
+                                ),
+                            }
+                        )
+                        continue
                     if parallel is None:
                         if ledger.tool_calls >= settings.max_tool_calls:
                             raise ExecutionError("TOOL_BUDGET_EXHAUSTED")
@@ -295,6 +430,8 @@ async def execute(
                         output = await call_tool(session, call, context, settings, trace, step)
                     else:
                         output = parallel[index]
+                    if output.get("error_code") in INPUT_ERROR_CODES:
+                        invalid_arguments.add(argument_key)
                     if output.get("status") != "error":
                         used_tools.add(call["name"])
                         if call["name"] == "get_plan_adjustment_context" and output.get(
@@ -304,6 +441,31 @@ async def execute(
                     if "proposal" in output:
                         if context.required_tools - used_tools:
                             raise ExecutionError("REQUIRED_TOOL_NOT_USED")
+                        if context.proposal_sink is not None:
+                            proposal = output["proposal"]
+                            canonical = json.dumps(proposal, sort_keys=True, ensure_ascii=False)
+                            duplicate = any(
+                                json.dumps(p, sort_keys=True, ensure_ascii=False) == canonical
+                                for p in context.proposal_sink
+                            )
+                            if not duplicate:
+                                if len(context.proposal_sink) >= 3:
+                                    raise ExecutionError("PROPOSAL_BUDGET_EXHAUSTED")
+                                context.proposal_sink.append(proposal)
+                            output = {
+                                "status": "candidate_collected",
+                                "collected_count": len(context.proposal_sink),
+                                "duplicate_ignored": duplicate,
+                                "note": "候选暂存，未保存。完成其余任务后回答，不重复提同一项。",
+                            }
+                            items.append(
+                                {
+                                    "type": "function_call_output",
+                                    "call_id": call["call_id"],
+                                    "output": json.dumps(output, ensure_ascii=False),
+                                }
+                            )
+                            continue
                         return {
                             "answer": "候选尚未保存。",
                             "proposal": output["proposal"],
@@ -344,7 +506,7 @@ async def run(
     context: RuntimeContext | None = None,
     model_factory=None,
 ) -> dict:
-    context = context or RuntimeContext()
+    context = replace(context or RuntimeContext(), original_request=message)
     settings = Settings()
     if context.orchestration != "single":
         settings = settings.model_copy(
@@ -377,6 +539,11 @@ async def run(
         "sdk_versions": {name: version(name) for name in ("openai", "mcp", "pydantic")},
         "prompt_version": context.prompt_version,
         "orchestration": context.orchestration,
+        "history_context": {
+            "policy": context.history_policy,
+            "turns": len(context.history) // 2,
+            "bytes": len(json.dumps(context.history, ensure_ascii=False).encode()),
+        },
         "trace": trace,
         "budgets": {
             "steps": settings.max_steps,
@@ -397,27 +564,74 @@ async def run(
     }
     started = time.perf_counter()
     model = None
+    ledger = Ledger()
     try:
-        model = (
-            model_factory(settings)
-            if model_factory
-            else (
-                ScriptedModel()
-                if offline
-                else create_model(
-                    configured(settings, resolve(settings, "standard", capability="text"))
-                )
+        primary_settings = (
+            settings
+            if offline
+            else configured(settings, resolve(settings, "standard", capability="text"))
+        )
+        if not offline:
+            report.update(
+                provider=primary_settings.provider,
+                requested_model=primary_settings.model,
+                api_family=primary_settings.api_family,
+                reasoning_effort_requested=primary_settings.reasoning_effort,
             )
+        model = (
+            model_factory(primary_settings)
+            if model_factory
+            else (ScriptedModel() if offline else create_model(primary_settings))
         )
         async with asyncio.timeout(settings.run_timeout):
             if context.orchestration == "single":
-                report.update(await execute(message, model, settings, trace, context))
+                report.update(
+                    await execute(message, model, settings, trace, context, ledger=ledger)
+                )
+            elif context.orchestration == "unified":
+                from fitlife.unified import UNIFIED_VERSION, execute_unified
+
+                report["prompt_version"] = UNIFIED_VERSION
+                report["orchestration_prompt_version"] = UNIFIED_VERSION
+                report.update(
+                    await execute_unified(message, model, settings, trace, context, ledger=ledger)
+                )
             else:
                 from fitlife.master import execute_master
+                from fitlife.orchestration_contract import VERSION
+
+                report["orchestration_prompt_version"] = VERSION
 
                 report.update(
-                    await execute_master(message, model, settings, trace, context, model_factory)
+                    await execute_master(
+                        message, model, settings, trace, context, model_factory, ledger=ledger
+                    )
                 )
+            if (
+                context.title_seed is not None
+                and report.get("end_reason")
+                in {"completed", "pending_confirmation", "action_resolved", "partial_completed"}
+                and settings.run_timeout - (time.perf_counter() - started) > 9
+                and (
+                    model_factory is None
+                    or getattr(model, "network_model", False)
+                    or getattr(model, "supports_titles", False)
+                )
+            ):
+                from fitlife.conversation_titles import summarize
+
+                seed = context.title_seed or (message, report.get("answer", ""))
+                title = await summarize(seed, settings, ledger, trace, model_factory)
+                if title:
+                    report["conversation_title"] = title
+    except asyncio.CancelledError:
+        report.update(
+            answer="执行已取消。",
+            end_reason="cancelled",
+            termination_code="RUN_CANCELLED",
+            error_type="CancelledError",
+        )
+        raise
     except Exception as exc:
         # SDK异常全文可能带请求/响应；本步仅记录类型和HTTP状态，不打印正文或凭据。
         causes = []
@@ -447,21 +661,38 @@ async def run(
             causes=causes,
         )
     finally:
-        if model is not None:
-            try:
-                await asyncio.wait_for(model.close(), timeout=5)
-            except Exception as exc:
-                report["cleanup_error_type"] = type(exc).__name__
-    report["seconds"] = round(time.perf_counter() - started, 3)
-    report.setdefault("termination_code", report["end_reason"].upper())
-    # 不保存自由文本输入或回答，避免将潜在个人资料写入普通运行日志。
-    stored = {
-        key: value for key, value in report.items() if key not in {"answer", "pending_action"}
-    }
-    target = PROJECT_ROOT / "artifacts" / "runs" / f"{run_id}.json"
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(stored, ensure_ascii=False, indent=2), encoding="utf-8")
-    report["report_path"] = str(target)
+        try:
+            if model is not None:
+                try:
+                    await asyncio.wait_for(model.close(), timeout=5)
+                except Exception as exc:
+                    report["cleanup_error_type"] = type(exc).__name__
+        finally:
+            report.setdefault("end_reason", "cancelled")
+            report.update(
+                steps=ledger.steps,
+                model_attempts=ledger.calls,
+                tool_attempts=ledger.tool_calls,
+                token_units=ledger.token_units,
+                execution_stats_version="ledger-v2",
+            )
+            report["seconds"] = round(time.perf_counter() - started, 3)
+            report["degraded"] = any(e.get("local_fallback") for e in trace)
+            if report["degraded"] and report.get("answer"):
+                report["answer"] = (
+                    "云端模型暂不可用，本次由本地备用模型处理。\n\n" + report["answer"]
+                )
+            report.setdefault("termination_code", report["end_reason"].upper())
+            # 不保存自由文本输入或回答，避免将潜在个人资料写入普通运行日志。
+            stored = {
+                key: value
+                for key, value in report.items()
+                if key not in {"answer", "pending_action", "conversation_title"}
+            }
+            target = PROJECT_ROOT / "artifacts" / "runs" / f"{run_id}.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(json.dumps(stored, ensure_ascii=False, indent=2), encoding="utf-8")
+            report["report_path"] = str(target)
     return report
 
 

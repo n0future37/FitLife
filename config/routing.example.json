@@ -1,0 +1,5 @@
+[
+  {"name":"single-query-with-history","profile":"fast","domains":["body","diet","exercise"],"kinds":["query"],"allow_history":true,"allow_dependencies":false},
+  {"name":"exercise-deliverable-or-dependent-query","profile":"complex","domains":["exercise"],"kinds":["query","deliverable"],"allow_history":true,"allow_dependencies":true},
+  {"name":"body-diet-deliverable","profile":"standard","domains":["body","diet"],"kinds":["query","deliverable"],"allow_history":true,"allow_dependencies":true}
+]

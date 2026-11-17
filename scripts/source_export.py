@@ -32,7 +32,17 @@ SUFFIXES = {
     ".yaml",
     ".yml",
     ".mako",
+    ".ps1",
+    ".png",
 }
+
+
+PUBLIC_CONFIGS = {
+    "openrouter.free.models.json",
+    "openrouter.free.routing.json",
+    "siliconflow.models.json",
+}
+PUBLIC_IMAGES = {"chat-confirmation.png", "activity-mobile.png", "media-review.png"}
 
 
 def files():
@@ -45,7 +55,15 @@ def files():
             and p.suffix in SUFFIXES
             and "__pycache__" not in p.parts
             and p.name not in {"AGENTS.md", "STATE.md", "HISTORY.md"}
-            and (directory != "config" or p.name.endswith(".example.json"))
+            and p.name != "learning-roadmap.md"
+            and (
+                p.suffix != ".png" or (p.parent == ROOT / "docs/images" and p.name in PUBLIC_IMAGES)
+            )
+            and (
+                directory != "config"
+                or p.name.endswith(".example.json")
+                or p.name in PUBLIC_CONFIGS
+            )
         )
     return sorted(set(paths))
 
@@ -61,13 +79,17 @@ def main():
     destination = folder / "source"
     destination.mkdir()
     records = {}
-    key = os.getenv("MODELFLARE_API_KEY", "")
+    keys = [
+        value
+        for name in ("MODELFLARE_API_KEY", "SILI_API_KEY", "OPENROUTER_API_KEY", "OPENROUTER")
+        if (value := os.getenv(name)) and len(value) >= 12
+    ]
     for path in files():
         assert not path.is_symlink() and path.resolve().is_relative_to(ROOT.resolve())
         relative = path.relative_to(ROOT)
         assert relative.parts[0] not in {"artifacts", "data", ".idea", ".git"}
         raw = path.read_bytes()
-        if key and key.encode() in raw:
+        if any(key.encode() in raw for key in keys):
             raise SystemExit("MODEL_KEY_FOUND_IN_SOURCE: " + relative.as_posix())
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -84,7 +106,8 @@ def main():
             "artifacts",
             "credentials and .env",
             "IDE/main.py",
-            "local STATE/AGENTS/HISTORY",
+            "local STATE/AGENTS/HISTORY and personal learning roadmap",
+            "raw media and model weights",
         ],
         known_model_key_absent=True,
         files=records,

@@ -1,0 +1,419 @@
+{
+  "created_utc": "2026-11-16T14:56:35.510972+00:00",
+  "selection": "prospective fixed SHA seed, two per action, prefer mirror test then train, >=2 annotated reps, <=8MiB, author CSV agreement, available groups disjoint from original15; no inference used",
+  "limitation": "local unseen subset, not official full blind benchmark; non-stu source identity incomplete; bench_press uses mirror train fallback",
+  "cases": [
+    {
+      "video_id": "train3899",
+      "source_name": "train3899.mp4",
+      "action_type": "squant",
+      "count": 2,
+      "video_size_bytes": 264002,
+      "cycle_bounds_json": "[5, 89, 89, 239]",
+      "id": "train3899",
+      "exercise": "squat",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 118,
+      "source_group": "train3899",
+      "file": "data\\video-v3\\repcount-fresh\\train3899.mp4",
+      "sha256": "292d9d67603ded352f92bfd132e37e11935d34bafb8bb3cf0441850d2ef39d69",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test2320",
+      "source_name": "test2320.mp4",
+      "action_type": "squant",
+      "count": 4,
+      "video_size_bytes": 351004,
+      "cycle_bounds_json": "[20, 70, 70, 129, 129, 183, 183, 240]",
+      "id": "test2320",
+      "exercise": "squat",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 68,
+      "source_group": "test2320",
+      "file": "data\\video-v3\\repcount-fresh\\test2320.mp4",
+      "sha256": "1cee72caf4a79765b66058aadbd0062ecf1df9e48b164baf5908eef42017d4bf",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train2737",
+      "source_name": "train2737.mp4",
+      "action_type": "pushups",
+      "count": 3,
+      "video_size_bytes": 350244,
+      "cycle_bounds_json": "[5, 142, 142, 255, 256, 299]",
+      "id": "train2737",
+      "exercise": "push_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 5,
+      "source_group": "train2737",
+      "file": "data\\video-v3\\repcount-fresh\\train2737.mp4",
+      "sha256": "5802365f7b922bc7c5586e246f759bcfade690bc9bfe17b849e2c990987816df",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train2659",
+      "source_name": "train2659.mp4",
+      "action_type": "pushups",
+      "count": 4,
+      "video_size_bytes": 260363,
+      "cycle_bounds_json": "[6, 54, 57, 150, 153, 217, 222, 288]",
+      "id": "train2659",
+      "exercise": "push_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 96,
+      "source_group": "train2659",
+      "file": "data\\video-v3\\repcount-fresh\\train2659.mp4",
+      "sha256": "73896b2493a0dc78d2d375b6ea0f62f2ce875c78de8017038887fc6e46d0fc42",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test2025",
+      "source_name": "test2025.mp4",
+      "action_type": "situp",
+      "count": 5,
+      "video_size_bytes": 327360,
+      "cycle_bounds_json": "[0, 49, 49, 106, 106, 162, 162, 210, 210, 266]",
+      "id": "test2025",
+      "exercise": "sit_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 60,
+      "source_group": "test2025",
+      "file": "data\\video-v3\\repcount-fresh\\test2025.mp4",
+      "sha256": "894311256876ed3ffa82960a64665091cbba7e539b25842c46401587ab75b185",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train3344",
+      "source_name": "train3344.mp4",
+      "action_type": "situp",
+      "count": 14,
+      "video_size_bytes": 693968,
+      "cycle_bounds_json": "[1, 23, 23, 40, 40, 58, 59, 75, 75, 92, 92, 109, 109, 126, 126, 144, 144, 161, 161, 178, 178, 189, 189, 207, 207, 226, 226, 244]",
+      "id": "train3344",
+      "exercise": "sit_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 0,
+      "source_group": "train3344",
+      "file": "data\\video-v3\\repcount-fresh\\train3344.mp4",
+      "sha256": "96313cb7e0131a6885e6c86c3efbfbf0921263e07956f393b8bfd95da86ac2b7",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train2508",
+      "source_name": "train2508.mp4",
+      "action_type": "pullups",
+      "count": 4,
+      "video_size_bytes": 381638,
+      "cycle_bounds_json": "[41, 90, 90, 133, 133, 241, 241, 299]",
+      "id": "train2508",
+      "exercise": "pull_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 25,
+      "source_group": "train2508",
+      "file": "data\\video-v3\\repcount-fresh\\train2508.mp4",
+      "sha256": "dbfca646d9f8877afe30cbee464efc42f2340854edad2682e1d124a38bc2ca41",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train2534",
+      "source_name": "train2534.mp4",
+      "action_type": "pullups",
+      "count": 2,
+      "video_size_bytes": 263226,
+      "cycle_bounds_json": "[9, 162, 165, 299]",
+      "id": "train2534",
+      "exercise": "pull_up",
+      "split": "fresh",
+      "mirror_split": "test",
+      "row_index": 103,
+      "source_group": "train2534",
+      "file": "data\\video-v3\\repcount-fresh\\train2534.mp4",
+      "sha256": "accfebe463427120e1f98e4c29e9219ed25161deebe6626bf96d15e8df4221bf",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train181",
+      "source_name": "train181.mp4",
+      "action_type": "benchpressing",
+      "count": 2,
+      "video_size_bytes": 259085,
+      "cycle_bounds_json": "[26, 172, 172, 298]",
+      "id": "train181",
+      "exercise": "bench_press",
+      "split": "fresh",
+      "mirror_split": "train",
+      "row_index": 171,
+      "source_group": "train181",
+      "file": "data\\video-v3\\repcount-fresh\\train181.mp4",
+      "sha256": "f7a6d7b990f677a655d7f434b2988e47d2f5a31085c26d867f9dae340c6d9741",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test153",
+      "source_name": "test153.mp4",
+      "action_type": "benchpressing",
+      "count": 5,
+      "video_size_bytes": 503968,
+      "cycle_bounds_json": "[5, 27, 27, 67, 67, 132, 132, 184, 184, 264]",
+      "id": "test153",
+      "exercise": "bench_press",
+      "split": "fresh",
+      "mirror_split": "train",
+      "row_index": 226,
+      "source_group": "test153",
+      "file": "data\\video-v3\\repcount-fresh\\test153.mp4",
+      "sha256": "79f4203a9ea927e61b216cfdb524efe55edc65a31f532528b019f7e2738f28a5",
+      "author_count_verified": true
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "stu8_71",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu4_64",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "test2315",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu6_68",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu4_69",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu8_70",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_45",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_45",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_46",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu6_39",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu9_48",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu9_47",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu10_60",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu3_55",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_55",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu3_57",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_57",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "train3335",
+      "reason": "requires_at_least_two_annotated_reps"
+    },
+    {
+      "id": "stu1_59",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_58",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_62",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_52",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_65",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu9_57",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu5_55",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu3_53",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu1_60",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_49",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_38",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu1_40",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu9_45",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_36",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_34",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu3_39",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "test1454",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu5_32",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu4_29",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu2_39",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_35",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu1_30",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_12",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_9",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_4",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "test135",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu10_1",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_13",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu10_5",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_5",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_10",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "train151",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_8",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu8_11",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu4_5",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu7_10",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu2_6",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "train143",
+      "reason": "requires_at_least_two_annotated_reps"
+    },
+    {
+      "id": "stu3_5",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu6_3",
+      "reason": "prospective_size_cap"
+    },
+    {
+      "id": "stu10_6",
+      "reason": "existing_source_group"
+    },
+    {
+      "id": "stu7_12",
+      "reason": "existing_source_group"
+    }
+  ]
+}

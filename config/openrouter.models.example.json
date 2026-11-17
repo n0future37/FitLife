@@ -1,0 +1,7 @@
+[
+  {"name":"standard","provider":"openrouter","base_url":"https://openrouter.ai/api/v1","api_family":"chat","model":"openai/gpt-5.4-mini","key_env":"OPENROUTER_API_KEY","capabilities":["text","tools","images"],"reasoning_effort":"low","request_timeout":20},
+  {"name":"fast","provider":"openrouter","base_url":"https://openrouter.ai/api/v1","api_family":"chat","model":"openai/gpt-5-mini","key_env":"OPENROUTER_API_KEY","capabilities":["text","tools"],"reasoning_effort":"low","request_timeout":12},
+  {"name":"complex","provider":"openrouter","base_url":"https://openrouter.ai/api/v1","api_family":"chat","model":"openai/gpt-5.4-mini","key_env":"OPENROUTER_API_KEY","capabilities":["text","tools"],"reasoning_effort":"high","request_timeout":30},
+  {"name":"vision","provider":"openrouter","base_url":"https://openrouter.ai/api/v1","api_family":"chat","model":"openai/gpt-5.4-mini","key_env":"OPENROUTER_API_KEY","capabilities":["text","images"],"reasoning_effort":"low","request_timeout":30},
+  {"name":"local","provider":"ollama","base_url":"http://127.0.0.1:11435","api_family":"ollama","model":"qwen3:4b-instruct-2507-q4_K_M","key_env":"LOCAL_UNUSED","capabilities":["text","tools"],"reasoning_effort":null,"request_timeout":45}
+]

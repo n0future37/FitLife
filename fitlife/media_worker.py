@@ -20,7 +20,7 @@ from fitlife.model import Settings, create_model
 from fitlife.model_profiles import configured, resolve
 from fitlife.routing import json_object
 
-VERSION = "media-samples-v1"
+VERSION = "media-samples-v2"
 
 
 def extract(path, kind, metadata, folder):
@@ -68,8 +68,13 @@ def prompt(task):
             "ll，不能猜每份等于100g。"
         ),
         "meal_photo": (
-            "列出可见食物。重量和热量无法可靠判断时填null；"
-            "可给估计但在uncertainty明确依据与误差，不能当成精确营养事实。"
+            "任务是提供可由用户核对的粗略餐食估算。列出盘中所有可见食物，避免重复计入配料。"
+            "对可辨认且可依据外观/常见份量粗估的食物，给出amount_g和estimated_energy_kcal"
+            "（该份食物总热量，不是每100g）。优先按约5g/5kcal取整，避免虚假精度。"
+            "没有称重不等于必须全部填null；可以明确假设常见份量与烹饪方式，再给估计。"
+            "确实辨认不了种类或份量毫无依据时保留null，不强猜，不将未知热量补0。"
+            "必须在uncertainty说明份量依据、隐形用油/酱汁等误差来源，声明只是图像估算；"
+            "不能声称知道真实重量、精确营养或给出医疗建议。"
         ),
         "workout_video": (
             "输入为稀疏视频采样，只描述可见动作和证据时间范围。不能从这些静帧"
@@ -77,12 +82,11 @@ def prompt(task):
             "样时间跨度当作实际训练时长。"
         ),
     }[task]
-    return (
-        common
-        + instruction
-        + "输出schema："
-        + json.dumps(RESULTS[task].model_json_schema(), ensure_ascii=False)
-    )
+    schema = RESULTS[task].model_json_schema()
+    if task == "workout_video":
+        schema["properties"].pop("counting", None)
+        schema["$defs"] = {"VideoObservation": schema["$defs"]["VideoObservation"]}
+    return common + instruction + "输出schema：" + json.dumps(schema, ensure_ascii=False)
 
 
 async def run_once(
@@ -106,6 +110,11 @@ async def run_once(
             kind, metadata, sha = asset.kind, asset.metadata_, asset.sha256
         if await asyncio.to_thread(lambda: hashlib.sha256(path.read_bytes()).hexdigest()) != sha:
             raise BusinessError("MEDIA_CONTENT_CHANGED")
+        if job["task"] == "workout_video" and job["partial"].get("count_request"):
+            from fitlife.video_jobs import run_count_job
+
+            await run_count_job(engine, job, path, metadata, sha, trace)
+            return True
         settings = Settings()
         profile = resolve(settings, settings.vision_model, capability="images")
         settings = configured(settings, profile).model_copy(
@@ -115,13 +124,18 @@ async def run_once(
                 "max_input_bytes": 3000000,
                 "max_total_token_units": 12000000,
                 "model_retries": 1,
-                "request_timeout": 45,
+                "request_timeout": min(settings.request_timeout, 45),
             }
         )
         model = model_factory(settings) if model_factory else create_model(settings)
         base_model = model
 
         class Reserved:
+            network_model = True
+
+            def __init__(self):
+                self.settings = settings
+
             async def complete(self, *args):
                 await asyncio.to_thread(
                     update_running, engine, job["id"], job["nonce"], reserve_call=True
@@ -183,9 +197,13 @@ async def run_once(
                             index + 1,
                         )
                         try:
+                            raw_result = json_object(reply.text)
+                            if job["task"] == "workout_video":
+                                # Sparse-image model outputs cannot forge local temporal counts.
+                                raw_result.pop("counting", None)
                             parsed = (
                                 RESULTS[job["task"]]
-                                .model_validate(json_object(reply.text))
+                                .model_validate(raw_result)
                                 .model_dump(mode="json")
                             )
                             if job["task"] == "workout_video":

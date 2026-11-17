@@ -35,3 +35,15 @@ v1.2新增完整周进度及确认删除场景，保留组未改变。不把不�
 实验开关FITLIFE_TOOL_POLICY=direct_recording仅强化“已发生活动缺时长直接问、明确时长直接候选”；
 默认baseline，未依据两条小样本就推广。评测报告settings、prompt_version及源码快照记录具体方案。
 
+
+## 新版探索实验（独立于旧基线）
+
+`experiments-v1.jsonl` 定义12个合成场景，用于N1串行/DAG、N2固定强模型/规则路由、N3最近完整/无历史/相关历史对照。各方案重复3次共84任务样本，按group隔离开发与保留组；不能与上述core-v1.2分数直接混合。协议、模型选择预检与正式结论见[实验说明](../docs/experiments-v1.md)。
+
+固定执行 `python -m fitlife.experiments --repeat 1`。真实执行需先在本机加载SILI_API_KEY，再显式运行 `python -m fitlife.experiments --live --repeat 3`；所有批次共享人民币账本上限5元，不因新批次重置。重复执行真实命令会产生新批次和费用，优先读取已有数据；恢复既有批次使用 `--live --campaign artifacts/experiments-v1/批次ID`，已完成样本不重跑。
+
+完整批次离线分析：`python scripts/analyze_experiments.py artifacts/experiments-v1/批次ID`，生成analysis.json与table.md；分析不调用模型。原始回复/轨迹、数据库快照、协议、源码ZIP和环境版本均在对应批次。固定响应只验证评测器与可靠写入，即使无历史也预设正确答案，不代表记忆效果。实验策略只允许内部synthetic test应用，HTTP用户不能开启。
+
+本轮原始84条中5条受实验预算保护中断；使用 `python scripts/analyze_experiments.py artifacts/experiments-v1/51ef75e6-f31d-4bdc-afff-66b7dd0ce369 --matched-study-budget` 生成78条完整对照统计，同时移除1条缺少同组对照的成功样本。排除证据在operational-censoring.json，其他模型/供应商/逻辑失败保留。
+
+`python scripts/rescore_experiments.py artifacts/experiments-v1/51ef75e6-f31d-4bdc-afff-66b7dd0ce369` 单独生成事后等价合同复核，不改原始判分；`--self-check`运行9个正/反例检查。6个生成计划样本用已确认画像而省略重复覆盖，合法业务结果原本已正确；复核不是模型效果提升。

@@ -20,13 +20,13 @@
 本地HTTP仅允许127.0.0.1/localhost/host.docker.internal。
 
 - `FITLIFE_ROUTER_MODEL`、`FITLIFE_PLANNER_MODEL`、`FITLIFE_SYNTHESIS_MODEL`、`FITLIFE_EASY_MODEL`、`FITLIFE_VISION_MODEL`引用配置名。
-- `FITLIFE_ROUTING_POLICY=fixed`固定领域模型；`conservative`启用上述选择规则。
+- `FITLIFE_ROUTING_POLICY=fixed`固定领域模型；`conservative`启用上述选择规则；`rules`按配置文件顺序匹配领域/任务类型/历史/依赖，并引用模型及推理强度配置。
 - `FITLIFE_ORCHESTRATION=master`为默认主从；`master_serial`为串行对照，`master_independent`为独立领域策略，`single`为原运动基线。
 - 模型请求带全局超时、最大调用数、输入字节和保守token单位预算；各子Agent不能各自重置总预算。
 
-支持显式Responses与Chat Completions适配。Chat适配转换工具调用ID、工具结果和图片内容块；
+支持显式Responses、Chat Completions与Ollama原生适配。Chat适配转换工具调用ID、工具结果和图片内容块；
 不自动猜协议。不同平台可能有额外字段差异，配置能力不等于已真实验证兼容。
-当前未安装本地模型，也未接入第二个平台账户；示例local配置仅为待验收入口。
+本机Ollama与精确标签qwen3:4b-instruct-2507-q4_K_M已部署；真实MCP/MySQL只读查询及超时降级、重放验收通过。OpenRouter密钥已配置，同一Key的NVIDIA/Cohere免费模型真实切换和只读工具往返通过，费用为0；付费示例及视觉未验收，见[免费接入](openrouter-free.md)。默认云端配置仍为ModelFlare；备用仅覆盖文本与只读工具。细节与启动命令见[模型可靠执行](model-resilience.md)。
 
 图片理解通过文字模型的图像输入，不使用图片生成或视频生成接口。
 视频通过本地FFmpeg采样后送视觉模型。参见[OpenAI图片输入说明](https://developers.openai.com/api/docs/guides/images-vision)。
@@ -46,3 +46,5 @@ policy-v2迁移保留原9次调用与v1账本备份，不重置1.5美元上限�
 以后重新运行应先核对最新价格，不能把此次快照视作长期固定报价。
 
 容器自定义注册表时为每个外部模型明确指定对应secret文件key_file，并只读挂载无秘密的配置文件；不假设宿主机环境变量自动进入容器。
+
+硅基流动已新增实际验收：`config/siliconflow.models.json`，四份云配置共用SILI_API_KEY，显式支持enable_thinking/thinking_budget与max_tokens，详见[接入与本机启动](siliconflow.md)。通用默认值保留，本机推荐脚本选择该平台；复杂配置与每种媒体任务分别看其验收边界。

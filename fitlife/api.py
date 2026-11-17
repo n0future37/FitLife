@@ -8,7 +8,7 @@ from typing import Annotated
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -94,6 +94,11 @@ class AgentInput(Input):
     conversation_id: UUID | None = None
 
 
+class ConversationTitle(Input):
+    title: str = Field(min_length=1, max_length=40)
+    revision: int = Field(strict=True, ge=0)
+
+
 def create_app(
     db_settings,
     *,
@@ -105,9 +110,17 @@ def create_app(
     orchestration_mode=None,
     media_worker_enabled=False,
     media_model_factory=None,
+    evaluation_history_policy="recent",
+    evaluation_auto_titles=True,
 ):
     if synthetic_evaluation and db_settings.environment != "test":
         raise ValueError("SYNTHETIC_EVALUATION_TEST_ONLY")
+    if (
+        evaluation_history_policy != "recent" or not evaluation_auto_titles
+    ) and not synthetic_evaluation:
+        raise ValueError("CONTEXT_EXPERIMENT_TEST_ONLY")
+    if evaluation_history_policy not in {"recent", "none", "focused"}:
+        raise ValueError("UNKNOWN_HISTORY_POLICY")
     engine = engine if engine is not None else db_settings.engine()
     service = PlanningService(engine)
     gate = asyncio.Semaphore(2)  # 每个进程最多两个Agent模型任务。
@@ -178,6 +191,7 @@ def create_app(
             "INVALID_DATE_RANGE",
             "INVALID_REQUEST_KEY",
             "INVALID_PAGINATION",
+            "INVALID_CONVERSATION_TITLE",
         }:
             status = 422
         return JSONResponse(status_code=status, content={"error_code": exc.code})
@@ -238,6 +252,23 @@ def create_app(
     def me(actor: Identity):
         return {"user_id": str(actor.user_id)}
 
+    from fitlife.legacy_archive import HistoryService
+
+    history = HistoryService(engine)
+
+    @app.get("/history")
+    def history_summary(actor: Identity):
+        return history.summary(actor)
+
+    @app.get("/history/{table}")
+    def history_records(
+        table: str,
+        actor: Identity,
+        offset: int = Query(0, ge=0),
+        limit: int = Query(30, ge=1, le=100),
+    ):
+        return history.records(actor, table, offset, limit)
+
     @app.delete("/auth/token", status_code=204)
     def revoke(
         actor: Identity, credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)]
@@ -269,6 +300,10 @@ def create_app(
     @app.delete("/conversations/{conversation_id}")
     def delete_conversation(conversation_id: UUID, actor: Identity):
         return conversations.erase(engine, actor, conversation_id)
+
+    @app.patch("/conversations/{conversation_id}/title")
+    def rename_conversation(conversation_id: UUID, body: ConversationTitle, actor: Identity):
+        return conversations.rename(engine, actor, conversation_id, body.title, body.revision)
 
     @app.post("/profile/actions")
     def propose_profile(body: ProfilePatch, actor: Identity, request_key: RequestKey):
@@ -389,6 +424,8 @@ def create_app(
                 .astimezone(ZoneInfo("Asia/Shanghai"))
                 .date()
             )
+            from fitlife.context_policy import select_history
+
             context = RuntimeContext(
                 server_module="fitlife.business_mcp",
                 orchestration=orchestration,
@@ -413,7 +450,11 @@ def create_app(
                     if settings.tool_policy == "baseline"
                     else "business-v5-direct-recording"
                 ),
-                history=tuple(claimed["history"]),
+                history=tuple(
+                    select_history(claimed["history"], message, evaluation_history_policy)
+                ),
+                history_policy=evaluation_history_policy,
+                title_seed=claimed.get("title_seed") if evaluation_auto_titles else None,
                 instructions=BUSINESS_PROMPT
                 + (DIRECT_RECORDING_PROMPT if settings.tool_policy == "direct_recording" else "")
                 + f"本轮上海日期：{day.isoformat()}；本周周一："
@@ -423,7 +464,7 @@ def create_app(
             result = await run(message, context=context, model_factory=model_factory)
             response = {
                 k: result[k]
-                for k in ("run_id", "answer", "end_reason", "steps", "pending_action")
+                for k in ("run_id", "answer", "end_reason", "steps", "pending_action", "degraded")
                 if k in result
             }
             successful = result["end_reason"] in {
@@ -440,6 +481,7 @@ def create_app(
                 claimed["nonce"],
                 response,
                 successful,
+                result.get("conversation_title"),
             )
             if not successful:
                 raise HTTPException(

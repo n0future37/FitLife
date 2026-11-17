@@ -1,5 +1,6 @@
 """本人会话管理。临时聊天与已确认画像分开，删除聊天不删除运动事实。"""
 
+import unicodedata
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -16,6 +17,55 @@ def owned(session, actor, conversation_id):
     return row
 
 
+def normalize_title(value):
+    if not isinstance(value, str):
+        raise BusinessError("INVALID_CONVERSATION_TITLE")
+    value = value.strip()
+    if not 1 <= len(value) <= 40 or any(
+        unicodedata.category(c).startswith("C") or c in "\u2028\u2029" for c in value
+    ):
+        raise BusinessError("INVALID_CONVERSATION_TITLE")
+    return value
+
+
+def title_info(row):
+    return {
+        "title": row.title or "新对话",
+        "title_source": row.title_source,
+        "title_revision": row.title_revision,
+    }
+
+
+def rename(engine, actor, conversation_id, title, revision):
+    title = normalize_title(title)
+    with Session(engine) as session, session.begin():
+        session.get(User, str(actor.user_id), with_for_update=True)
+        row = owned(session, actor, conversation_id)
+        if row.title_revision != revision:
+            raise BusinessError("STALE_CONVERSATION_TITLE")
+        row.title, row.title_source = title, "user"
+        row.title_revision += 1
+        row.updated_at = utcnow()
+        return {"conversation_id": row.id, **title_info(row)}
+
+
+def title_seed(session, actor, conversation):
+    if conversation.title_source != "pending":
+        return None
+    first = session.scalar(
+        select(AgentRequest)
+        .where(
+            AgentRequest.owner_id == str(actor.user_id),
+            AgentRequest.conversation_id == conversation.id,
+            AgentRequest.status == "completed",
+            AgentRequest.user_message.is_not(None),
+        )
+        .order_by(AgentRequest.turn_index)
+        .limit(1)
+    )
+    return (first.user_message, (first.response or {}).get("answer", "")) if first else ()
+
+
 def create(engine, actor):
     with Session(engine) as session, session.begin():
         if session.get(User, str(actor.user_id), with_for_update=True) is None:
@@ -27,9 +77,12 @@ def create(engine, actor):
             updated_at=utcnow(),
             lease_until=utcnow(),
             deleted=False,
+            title="新对话",
+            title_source="pending",
+            title_revision=0,
         )
         session.add(row)
-        return {"conversation_id": row.id}
+        return {"conversation_id": row.id, **title_info(row)}
 
 
 def recent(engine, actor):
@@ -45,7 +98,11 @@ def recent(engine, actor):
         )
         return {
             "conversations": [
-                {"conversation_id": row.id, "updated_at": row.updated_at.isoformat() + "Z"}
+                {
+                    "conversation_id": row.id,
+                    "updated_at": row.updated_at.isoformat() + "Z",
+                    **title_info(row),
+                }
                 for row in rows
             ],
             "limit": 50,
@@ -84,7 +141,12 @@ def transcript(engine, actor, conversation_id):
                     "response": response,
                 }
             )
-        return {"conversation_id": conversation.id, "turns": messages, "limit": 50}
+        return {
+            "conversation_id": conversation.id,
+            "turns": messages,
+            "limit": 50,
+            **title_info(conversation),
+        }
 
 
 def erase(engine, actor, conversation_id):
@@ -113,6 +175,8 @@ def erase(engine, actor, conversation_id):
             if action:
                 action.status = "superseded"
         conversation.deleted, conversation.active_request_key = True, None
+        conversation.title, conversation.title_source = "新对话", "pending"
+        conversation.title_revision += 1
         return {"status": "erased", "business_data_retained": True}
 
 

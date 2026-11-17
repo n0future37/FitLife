@@ -121,6 +121,9 @@ class Conversation(Base):
     lease_until: Mapped[datetime] = mapped_column(DateTime)
     deleted: Mapped[bool] = mapped_column(default=False)
     version: Mapped[int] = mapped_column(Integer, default=0)
+    title: Mapped[str] = mapped_column(String(80), default="新对话")
+    title_source: Mapped[str] = mapped_column(String(12), default="pending")
+    title_revision: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class PendingAction(Base):

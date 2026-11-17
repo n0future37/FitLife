@@ -3,8 +3,8 @@ const $ = id => document.getElementById(id);
 const days = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const names = {temporary_constraints:"临时约束",height_cm:"身高 cm",age:"填写时年龄",sex:"性别",space:"训练空间",equipment:"器械",limitations:"训练限制",diet_preferences:"饮食偏好",walking:"步行",gentle_mobility:"轻柔关节活动",goal:"运动目标",preferred_activities:"偏好活动",available_weekdays:"可用星期",weekly_sessions:"每周次数",session_minutes:"每次分钟"};
 const statuses = {pending:"待确认，尚未保存",applied:"已保存",rejected:"已拒绝",expired:"已过期",superseded:"已失效，请重新提出要求"};
-const errors = {UNAUTHENTICATED:"连接已失效，请重新输入个人令牌。",STALE_CONFIRMATION:"内容已变更，请刷新后检查新草案。",ACTION_NOT_PENDING:"该草案已处理或失效，请刷新。",REQUEST_IN_PROGRESS:"刚才的请求仍在处理，请稍后用原请求重试。",CONVERSATION_IN_PROGRESS:"这段对话正在处理请求，请稍后再试。",AGENT_CAPACITY_REACHED:"当前较忙，请稍后重试。",INVALID_INPUT:"请检查填写内容、日期或数值范围。",INVALID_WEEK_START:"请将周起点选为周一。",PROFILE_SCHEDULE_CONFLICT:"每周次数不能超过可用天数。",DATABASE_UNAVAILABLE:"暂时无法连接数据服务，请稍后重试。",AGENT_FAILED:"本次请求未完成，可以重试原请求找回结果。"};
-let token = "", conversation = null, failedRequest = null, busy = false;
+const errors = {STALE_CONVERSATION_TITLE:"对话名称已变化，请重新打开重命名后保存。",INVALID_CONVERSATION_TITLE:"名称需为1至40字，不能含换行或控制字符。",UNAUTHENTICATED:"连接已失效，请重新输入个人令牌。",STALE_CONFIRMATION:"内容已变更，请刷新后检查新草案。",ACTION_NOT_PENDING:"该草案已处理或失效，请刷新。",REQUEST_IN_PROGRESS:"刚才的请求仍在处理，请稍后用原请求重试。",CONVERSATION_IN_PROGRESS:"这段对话正在处理请求，请稍后再试。",AGENT_CAPACITY_REACHED:"当前较忙，请稍后重试。",INVALID_INPUT:"请检查填写内容、日期或数值范围。",INVALID_WEEK_START:"请将周起点选为周一。",PROFILE_SCHEDULE_CONFLICT:"每周次数不能超过可用天数。",DATABASE_UNAVAILABLE:"暂时无法连接数据服务，请稍后重试。",AGENT_FAILED:"本次请求未完成，可以重试原请求找回结果。"};
+let token = "", conversation = null, failedRequest = null, busy = false, titleRevision = 0;
 const dateText = date => new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Shanghai",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
 const today = dateText(new Date());
 const now = new Date(`${today}T12:00:00Z`); now.setUTCDate(now.getUTCDate() - (now.getUTCDay()+6)%7);
@@ -51,7 +51,7 @@ function renderOperation(kind,payload,parent){
 }
 
 function candidate(data,parent){
-  parent.replaceChildren();const box=element("div",undefined,"candidate");parent.append(box);
+  parent.replaceChildren();const box=element("div",undefined,"candidate");box.dataset.status=data.status;parent.append(box);
   const title={action_bundle:"请检查整份变更",domain_record:"请检查这条记录",delete_domain_record:"请检查要删除的记录",record_activity:"请检查这次活动",delete_activity:"请检查要删除的活动",profile_patch:"请检查偏好变更",profile_forget:"请检查要忘记的信息",save_plan:"请检查周计划",adjust_plan:"请检查计划调整"};
   const resolved=data.status==="applied"?(["delete_activity","delete_domain_record"].includes(data.kind)?"已删除":data.kind==="profile_forget"?"已忘记":"已保存"):statuses[data.status]||data.status;
   box.append(element("h2",title[data.kind]||"请检查变更"),element("span",resolved,"badge"));
@@ -87,13 +87,15 @@ function candidate(data,parent){
 }
 async function loadConversations(){
   const data=await api("/conversations");$("conversations").replaceChildren();
-  data.conversations.forEach((item,i)=>{const option=element("option",`对话 ${i+1} · ${new Date(item.updated_at).toLocaleString("zh-CN")}`);option.value=item.conversation_id;$("conversations").append(option);});
+  data.conversations.forEach(item=>{const option=element("option",item.title||"新对话");option.value=item.conversation_id;option.title=`最近更新：${new Date(item.updated_at).toLocaleString("zh-CN")}`;$("conversations").append(option);});
   if(conversation)$("conversations").value=conversation;
 }
 async function newConversation(){const data=await api("/conversations","POST");conversation=data.conversation_id;failedRequest=null;$("retry").hidden=true;await loadConversations();await loadChat();}
 async function loadChat(){
   $("messages").replaceChildren();if(!conversation)return;
   const data=await api(`/conversations/${conversation}`);
+  titleRevision=data.title_revision;$("conversation-title").value=data.title||"新对话";$("conversation-title-form").hidden=true;
+  if(!data.turns.length){const empty=element("div",undefined,"chat-empty");empty.append(element("span","↗","empty-mark"),element("h2","今天，从一件小事开始"),element("p","记录一次活动，安排接下来的一周，或回顾已经完成的事。"));$("messages").append(empty);}
   for(const turn of data.turns){
     if(turn.message)$("messages").append(element("div",turn.message,"bubble user"));
     const answer=turn.response?.answer||(turn.status==="running"?"请求仍在处理中，可用原请求重试。":"本次请求未完成。");
@@ -105,8 +107,9 @@ async function loadChat(){
   $("messages").scrollTop=$("messages").scrollHeight;
 }
 async function sendRequest(request){
+  document.querySelector(".chat-empty")?.remove();
   failedRequest=request;$("retry").hidden=true;
-  try{await api("/agent/requests","POST",{message:request.message,conversation_id:request.conversation},request.key);failedRequest=null;$("message").value="";await loadChat();await refreshPanels();}
+  try{await api("/agent/requests","POST",{message:request.message,conversation_id:request.conversation},request.key);failedRequest=null;$("message").value="";await loadChat();await loadConversations();await refreshPanels();}
   catch(error){$("retry").hidden=false;await loadChat();throw error;}
 }
 async function loadPlan(){
@@ -134,10 +137,13 @@ async function loadProfile(){
 }
 async function refreshPanels(){await Promise.all([loadProfile(),loadPlan(),loadRecords()]);if(typeof loadMediaJobs==="function")await loadMediaJobs();}
 $("login-form").onsubmit=event=>{event.preventDefault();action(event.submitter,async()=>{token=$("token").value.trim();try{await api("/me");await loadConversations();conversation=$("conversations").value||null;if(!conversation)await newConversation();else await loadChat();await refreshPanels();$("login").hidden=true;$("workspace").hidden=false;$("logout").hidden=false;$("token").value="";}catch(error){token="";throw error;}});};
-$("logout").onclick=()=>action($("logout"),async()=>{let revokeError=null;try{await api("/auth/token","DELETE");}catch(error){revokeError=error;}finally{if(typeof clearMedia==="function")clearMedia();token="";conversation=null;failedRequest=null;$("workspace").hidden=true;$("login").hidden=false;$("logout").hidden=true;$("retry").hidden=true;["messages","profile-candidate","activity-candidate","records","memory","plan-content"].forEach(id=>$(id).replaceChildren());["token","goal","message","activity-minutes","frequency","duration","preference"].forEach(id=>$(id).value="");document.querySelectorAll("[name=weekday]").forEach(input=>input.checked=false);}if(revokeError)notice("已退出本页；访问凭证已失效或暂未能在服务端注销。");});
+$("logout").onclick=()=>action($("logout"),async()=>{let revokeError=null;try{await api("/auth/token","DELETE");}catch(error){revokeError=error;}finally{if(typeof clearMedia==="function")clearMedia();token="";conversation=null;failedRequest=null;titleRevision=0;$("conversation-title-form").hidden=true;$("workspace").hidden=true;$("login").hidden=false;$("logout").hidden=true;$("retry").hidden=true;["messages","profile-candidate","activity-candidate","records","memory","plan-content","conversations"].forEach(id=>$(id).replaceChildren());["token","goal","message","activity-minutes","frequency","duration","preference","conversation-title"].forEach(id=>$(id).value="");document.querySelectorAll("[name=weekday]").forEach(input=>input.checked=false);}if(revokeError)notice("已退出本页；访问凭证已失效或暂未能在服务端注销。");});
 document.querySelectorAll("[data-tab]").forEach(button=>button.onclick=()=>{document.querySelectorAll(".tab").forEach(panel=>panel.hidden=panel.id!==button.dataset.tab);document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("selected",b===button));notice();});
 $("new-chat").onclick=()=>action($("new-chat"),newConversation);
 $("conversations").onchange=()=>action($("conversations"),async()=>{conversation=$("conversations").value;failedRequest=null;$("retry").hidden=true;await loadChat();});
+$("rename-chat").onclick=()=>{if(busy||!conversation)return;$("conversation-title-form").hidden=false;$("conversation-title").focus();$("conversation-title").select();};
+$("cancel-title").onclick=()=>{$("conversation-title-form").hidden=true;$("rename-chat").focus();};
+$("conversation-title-form").onsubmit=event=>{event.preventDefault();const title=$("conversation-title").value.trim();if(!title)return;action(event.submitter,async()=>{await api(`/conversations/${conversation}/title`,"PATCH",{title,revision:titleRevision});await loadChat();await loadConversations();$("rename-chat").focus();});};
 $("delete-chat").onclick=()=>{if(!confirm("删除这段聊天？已保存的运动记录、计划和偏好会保留。"))return;action($("delete-chat"),async()=>{await api(`/conversations/${conversation}`,"DELETE");await newConversation();});};
 $("chat-form").onsubmit=event=>{event.preventDefault();const message=$("message").value.trim();if(!message)return;action(event.submitter,async()=>sendRequest({key:crypto.randomUUID(),message,conversation}));};
 $("retry").onclick=()=>action($("retry"),async()=>{if(failedRequest)await sendRequest(failedRequest);});

@@ -53,10 +53,8 @@ def snapshot(job):
         "error_code": job.error_code,
         "reviewed": job.reviewed,
         "evidence": job.evidence,
-        "note": (
-            "视觉结果可能有误；视频仅覆盖采样片段，"
-            "visible_reps不是整段准确次数。尚未保存为业务记录。"
-        ),
+        "count_exercise": (job.partial or {}).get("count_request", {}).get("exercise"),
+        "note": "自动观察或计数可能有误，需核对并确认才保存；未指定动作的视频仅作稀疏观察。",
     }
 
 
@@ -183,7 +181,9 @@ def create_job(engine, actor, asset_id, request, key):
             nonce=str(uuid4()),
             reviewed=False,
             evidence={},
-            partial={},
+            partial={"count_request": {"exercise": request.count_exercise}}
+            if request.count_exercise
+            else {},
             created_at=utcnow(),
             updated_at=utcnow(),
         )
@@ -218,6 +218,8 @@ def change_job(engine, actor, id_, operation, version=None, result=None):
                 raise BusinessError("STALE_MEDIA_REVIEW")
             checked = RESULTS[job.task].model_validate(result).model_dump(mode="json")
             if job.task == "workout_video":
+                if checked.get("counting") != (job.result or {}).get("counting"):
+                    raise BusinessError("AUTOMATIC_COUNT_EVIDENCE_IMMUTABLE")
                 duration = session.get(MediaAsset, job.asset_id).metadata_["duration"]
                 if any(o["end_sec"] > duration for o in checked["observations"]):
                     raise BusinessError("INVALID_EVIDENCE_RANGE")

@@ -8,7 +8,7 @@ from uuid import UUID
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 
-from fitlife.business import ActivityInput, Actor, BusinessError, ForgetProfile, ProfilePatch
+from fitlife.business import ActivityInput, Actor, BusinessError, ForgetProfile
 from fitlife.database import DatabaseSettings
 from fitlife.plan_types import PlanOverrides, PlanRequest
 from fitlife.planning import PlanningService
@@ -26,6 +26,13 @@ def create_server():
     service.collect_candidates = os.getenv("FITLIFE_COLLECT_CANDIDATES") == "1"
     request_day = date.fromisoformat(os.environ["FITLIFE_TRUSTED_REQUEST_DAY"])
     server = FastMCP("fitlife-business")
+    from fitlife.profile_inputs import ExerciseProfilePatch, ToolProfilePatch
+
+    ProfileInput = (
+        ExerciseProfilePatch
+        if os.getenv("FITLIFE_TRUSTED_DOMAIN") == "exercise"
+        else ToolProfilePatch
+    )
     read_plan_versions = {}
     read_adjustment_contexts = {}
 
@@ -65,8 +72,8 @@ def create_server():
         return call(service.propose, actor, "profile_forget", data.model_dump(mode="json"), key)
 
     @server.tool()
-    def propose_profile_update(patch: ProfilePatch) -> dict:
-        """仅根据本轮用户明确提供的信息提出画像更新候选；不是保存，等待页面确认。"""
+    def propose_profile_update(patch: ProfileInput) -> dict:
+        """仅填本轮明确更新的patch字段，未提供字段省略，禁止填null。运动目标用goal，例如patch={"goal":"保持规律活动"}；本领域不填写身体/饮食字段。候选等待页面确认，不是保存。"""
         if "temporary_constraints" in patch.model_fields_set:
             return {"status": "error", "error_code": "USE_DEDICATED_CONSTRAINT_TOOL"}
         return call(

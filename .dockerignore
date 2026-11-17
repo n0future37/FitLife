@@ -12,6 +12,13 @@
 !evals/**
 !scripts/
 !scripts/**
+!config/
+!config/models.example.json
+!config/routing.example.json
+!config/openrouter.models.example.json
+!config/openrouter.free.models.json
+!config/openrouter.free.routing.json
+!config/siliconflow.models.json
 **/__pycache__/
 **/*.pyc
 **/.env*

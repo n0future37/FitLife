@@ -1,21 +1,34 @@
 <!doctype html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FitLife · 一步一步，保持运动</title><link rel="stylesheet" href="/assets/style.css"></head>
-<body>
-<header><a href="/" class="brand">FitLife<span>运动 · 饮食 · 身体</span></a><p>一步一步，保持运动。</p><button id="logout" hidden>退出</button></header>
-<main>
-<section id="login" class="login panel"><span class="eyebrow">欢迎回来</span><h1>从今天的一次活动开始</h1>
-<p>管理自己的运动目标、饮食和身体记录。先连接你的个人空间。</p>
-<form id="login-form"><label>个人访问令牌<input id="token" type="password" required autocomplete="off" maxlength="128"></label><button>连接我的空间</button></form>
-<p class="hint">令牌由本机账户管理入口提供，只在本页内存中使用；刷新后需重新连接。不要填入模型密钥。</p></section>
-<div id="workspace" hidden>
-<nav aria-label="功能"><button data-tab="chat" class="selected">对话</button><button data-tab="plan">计划与进度</button><button data-tab="activity">活动记录</button><button data-tab="profile">目标与偏好</button><button data-tab="media">图片与视频</button><button data-tab="domain">身体与饮食记录</button></nav>
-<section id="chat" class="tab panel"><div class="title"><div><span class="eyebrow">随时记下来</span><h1>今天想做什么？</h1></div><button id="new-chat" class="secondary">新对话</button></div>
-<div class="row"><label>最近对话<select id="conversations" aria-label="最近对话"></select></label><button id="delete-chat" class="quiet">删除当前对话</button></div>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff">
+<title>FitLife · 让行动成为习惯</title><link rel="stylesheet" href="/assets/style.css"></head><body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+<header class="app-header"><a href="/" class="brand" aria-label="FitLife 首页" translate="no"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 16L10 5h9 M8 12h8 M10 12l-5 9"/></svg></span>FitLife</a><p class="header-caption">运动、饮食和身体，一个空间记下来。</p>
+<div class="header-right"><span id="space-status" class="connection">个人习惯管理</span><button id="logout" class="secondary" hidden>退出</button></div></header>
+<main id="main" tabindex="-1">
+<section id="login" class="onboarding" aria-label="连接个人空间">
+<div class="welcome-story"><span class="welcome-tag">从今天的一次活动开始</span><h1>把行动，<br>记成习惯。</h1><p>把想做的事说出来。一起安排运动，记下实际发生的变化，再找到适合自己的节奏。</p>
+<svg class="stride-art" viewBox="0 0 520 140" width="520" height="140" role="img" aria-label="目标、行动与回顾，构成持续的习惯">
+<path d="M52 58H468" fill="none" stroke="#ccc" stroke-width="2"/>
+<circle cx="52" cy="58" r="7" fill="#000"/><circle cx="260" cy="58" r="7" fill="#fff" stroke="#000" stroke-width="2"/><circle cx="468" cy="58" r="7" fill="#fff" stroke="#000" stroke-width="2"/>
+<g fill="#555" font-family="Segoe UI,Microsoft YaHei,sans-serif" font-size="15" text-anchor="middle"><text x="52" y="105">目标</text><text x="260" y="105">行动</text><text x="468" y="105">回顾</text></g>
+</svg></div>
+<div class="login-form-panel"><h2>连接你的个人空间</h2><p>让目标、计划和每一条记录，都有迹可循。</p>
+<form id="login-form" method="post"><label for="token">个人访问令牌<input id="token" name="personal-access-token" type="password" required autocomplete="off" spellcheck="false" maxlength="128" placeholder="粘贴本机生成的个人令牌…" aria-describedby="token-hint"></label><button disabled>连接我的空间</button></form>
+<p id="token-hint" class="hint">令牌由本机账户管理入口提供。请勿填入模型密钥；刷新页面后需要重新连接。</p>
+<div class="privacy-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6"/></svg><span>令牌只在当前页面内存中使用。重要变更会先展示草案，由你确认后保存。</span></div></div></section>
+<div id="workspace" class="workspace-shell" hidden><aside class="sidebar"><p class="nav-label">我的空间</p><nav aria-label="功能"><button type="button" data-tab="chat" class="selected" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H9l-5 4z"/></svg>对话助手</button><button type="button" data-tab="plan" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v16H4z M8 2v6 M16 2v6 M4 10h16 M8 14h3 M14 14h3 M8 18h3"/></svg>计划与进度</button><button type="button" data-tab="activity" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>活动记录</button><button type="button" data-tab="profile" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M4 21v-2a8 8 0 0 1 16 0v2"/></svg>目标与偏好</button><button type="button" data-tab="media" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18v16H3z M3 16l6-6 5 5 3-3 4 4 M16 8h1"/></svg>图片与视频</button><button type="button" data-tab="domain" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v6 M3 3v5a4 4 0 0 0 8 0V3 M7 12v9 M18 3v18 M18 3c-5 2-5 9 0 9"/></svg>身体与饮食</button><button type="button" data-tab="history" class="" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v5H4z M6 9v12h12V9 M10 13h4"/></svg>历史资料</button></nav><div class="sidebar-note"><strong>按自己的节奏</strong>每一步，都可以从这里开始。</div></aside>
+<div class="work-area"><div class="workspace-heading"><div><span id="section-title" class="section-context">对话助手</span><p>把想法变成安排，把行动留在记录里。</p></div><time id="today-label" class="local-date"></time></div><div id="chat" class="tab chat-layout"><section class="chat-main panel" aria-label="对话"><div class="title"><div><span class="eyebrow">随时记下来</span><h1>今天想做什么？</h1></div><button id="new-chat" class="secondary">新对话</button></div>
+<div class="row"><label>最近对话<select id="conversations" aria-label="最近对话"></select></label><button id="rename-chat" type="button" class="secondary">重命名</button><button id="delete-chat" class="quiet">删除当前对话</button></div>
+<form id="conversation-title-form" class="row" hidden><label for="conversation-title">对话名称<input id="conversation-title" name="conversation-title" maxlength="40" required autocomplete="off" spellcheck="false" placeholder="例如：本周步行计划…"></label><button>保存名称</button><button id="cancel-title" type="button" class="quiet">取消</button></form>
 <div id="messages" class="messages" aria-live="polite"></div>
 <form id="chat-form"><label for="message">告诉 FitLife<textarea id="message" rows="3" maxlength="4000" placeholder="例如：记录今天步行二十分钟、体重70公斤" required></textarea></label><div class="row"><small>新消息会撤销本对话旧的待确认草案。确认后才保存。</small><button id="send">发送</button></div></form>
 <button id="retry" class="secondary" hidden>重试刚才的请求</button></section>
+<aside class="chat-guide" aria-label="对话建议"><h2>从这里开始</h2>
+<p>说清想做的事，FitLife 会读取必要信息，帮你安排下一步。</p>
+<button type="button" data-prompt="记录今天步行二十分钟">记录今天步行二十分钟</button>
+<button type="button" data-prompt="帮我制定下周运动计划">帮我安排下周运动</button>
+<button type="button" data-prompt="查询本周计划完成情况">回顾本周完成情况</button>
+<p class="guide-note">计划先看草案，重要变更由你确认。记录不足时，FitLife 会说明还缺什么。</p></aside></div>
 <section id="plan" class="tab panel" hidden><span class="eyebrow">安排与回顾</span><h1>本周，循序渐进</h1>
 <form id="week-form" class="row"><label>查看哪一周<input id="week" type="date" required></label><button>查看</button></form><p class="hint">请选择周一；可以在对话中提出新的计划或调整要求。</p>
 <div id="plan-content"></div></section>
@@ -25,13 +38,14 @@
 <section id="profile" class="tab panel" hidden><span class="eyebrow">以你的节奏</span><h1>目标与偏好</h1><p>这些是你确认保存的信息。单周临时调整不会改写这里的偏好。</p><div id="memory"></div>
 <form id="profile-form" class="grid"><label class="wide">运动目标<input id="goal" maxlength="500"></label><label>偏好活动<select id="preference"><option value="">暂不设置</option><option value="walking">步行</option><option value="gentle_mobility">轻柔关节活动</option></select></label><label>每周次数<input id="frequency" type="number" min="1" max="7"></label><label>每次分钟<input id="duration" type="number" min="1" max="180"></label><fieldset class="wide"><legend>可用的星期</legend><div id="weekdays" class="checks"></div></fieldset><button>检查偏好变更</button></form><div id="profile-candidate"></div></section>
 <section id="media" class="tab panel" hidden><span class="eyebrow">先识别，再核对</span><h1>图片与视频</h1>
-<p>识别可能出错，核对后才能提出保存候选。视频使用稀疏采样，不承诺整段准确计数。</p>
-<form id="media-form" class="grid"><label>处理任务<select id="media-task"><option value="nutrition_label">读取营养标签</option><option value="meal_photo">识别餐食照片</option><option value="workout_video">观察运动视频</option></select></label><label>素材<input id="media-file" type="file" accept="image/png,image/jpeg,video/mp4,video/webm" required></label><label class="wide">补充要求<input id="media-message" maxlength="2000"></label><small class="wide">图片最多8MB；视频最多80MB、3分钟。分析会调用模型并产生费用；请避免上传无关个人资料。</small><button>上传并开始分析</button></form>
+<p>识别和自动计数可能出错，核对后才能提出保存候选。视频计数适用于单人、单种动作；遮挡、多人或画面不足时会提示无法可靠计数。照片热量是粗略估计，份量、用油与酱汁可能造成较大误差，不能用于精准热量核算。</p>
+<form id="media-form" class="grid"><label>处理任务<select id="media-task"><option value="nutrition_label">读取营养标签</option><option value="meal_photo">识别餐食照片</option><option value="workout_video">力量训练视频计数</option></select></label><label id="media-exercise-label" hidden>视频中的动作<select id="media-exercise"><option value="">请选择动作</option><option value="squat">深蹲</option><option value="push_up">俯卧撑</option><option value="biceps_curl">肱二头肌弯举</option><option value="sit_up">仰卧起坐</option><option value="pull_up">引体向上</option><option value="bench_press">卧推</option><option value="observe">其他动作：仅观察，不计数</option></select></label><label>素材<input id="media-file" type="file" accept="image/png,image/jpeg,video/mp4,video/webm" required></label><label class="wide">补充要求<input id="media-message" maxlength="2000"></label><small class="wide">图片最多8MB；视频最多80MB、3分钟。图片分析会调用模型产生费用；支持的动作计数在本机执行。请避免上传无关个人资料。</small><button>上传并开始分析</button></form>
 <div class="row"><h2>最近任务</h2><button id="media-refresh" class="secondary">刷新任务</button></div><div id="media-jobs" class="actions"></div><div id="media-preview"></div><div id="media-result"></div><div id="media-candidate"></div></section>
 <section id="domain" class="tab panel" hidden><h1>身体、饮食与训练明细</h1><p>这些记录与计划分钟分别统计。照片热量保留估算标记，未记录不代表实际为零。</p>
-<form id="domain-form" class="grid"><label>记录类型<select id="domain-type"><option value="body">身体测量</option><option value="steps">步数</option><option value="workout">训练明细</option><option value="meal">食物库核算餐食</option><option value="photo_meal">照片估算餐食</option><option value="food">食物资料</option></select></label><label>开始日期<input id="domain-start" type="date" required></label><label>结束日期<input id="domain-end" type="date" required></label><button>查询本人记录</button></form><div id="domain-output"></div></section>
-</div>
-<p id="status" role="status" aria-live="polite"></p>
-<footer>提供一般运动与习惯管理辅助，不用于诊断、治疗或康复决策。健康风险无法判断时，请咨询专业人员。</footer>
-</main><script src="/assets/app.js" defer></script><script src="/assets/media.js" defer></script>
-</body></html>
+<form id="domain-form" class="grid"><label>记录类型<select id="domain-type"><option value="body">身体测量</option><option value="steps">步数</option><option value="workout">训练明细</option><option value="meal">食物库核算餐食</option><option value="photo_meal">照片估算餐食</option><option value="food">食物资料</option></select></label><label>开始日期<input id="domain-start" type="date" required></label><label>结束日期<input id="domain-end" type="date" required></label><button>查询本人记录</button></form><div id="domain-output"></div></section><section id="history" class="tab panel" hidden><span class="eyebrow">资料已搬到这里</span><h1>历史资料</h1>
+<p>保留原记录的日期、来源与关联。历史数值未经重新核验，不会自动覆盖你当前的目标或计划。</p>
+<div id="history-counts" class="history-counts"></div>
+<form id="history-form" class="row"><label for="history-table">查看资料<select id="history-table" name="history-table"><option value="foods">食品资料</option></select></label><button>查看资料</button></form>
+<div id="history-output" aria-live="polite"></div></section></div></div>
+<p id="status" role="status" aria-live="polite"></p><footer>FitLife 提供一般运动与习惯管理辅助，不用于诊断、治疗或康复决策。健康风险无法判断时，请咨询专业人员。</footer>
+</main><script src="/assets/app.js" defer></script><script src="/assets/media.js" defer></script><script src="/assets/layout.js" defer></script></body></html>

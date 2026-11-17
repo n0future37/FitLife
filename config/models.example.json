@@ -1,6 +1,56 @@
 [
-  {"name":"standard","provider":"modelflare","base_url":"https://modelflare.dev/v1","api_family":"responses","model":"gpt-5.6-sol","key_env":"MODELFLARE_API_KEY","capabilities":["text","tools","images"],"reasoning_effort":"low"},
-  {"name":"fast","provider":"modelflare","base_url":"https://modelflare.dev/v1","api_family":"responses","model":"gpt-6-luna","key_env":"MODELFLARE_API_KEY","capabilities":["text","tools"],"reasoning_effort":"low"},
-  {"name":"vision","provider":"modelflare","base_url":"https://modelflare.dev/v1","api_family":"responses","model":"gpt-5.6-sol","key_env":"MODELFLARE_API_KEY","capabilities":["text","images"],"reasoning_effort":"low"},
-  {"name":"local","provider":"local-unverified","base_url":"http://127.0.0.1:8000/v1","api_family":"chat","model":"replace-with-your-deployed-model-id","key_env":"LOCAL_MODEL_KEY","capabilities":["text","tools"]}
+  {
+    "name": "standard",
+    "provider": "modelflare",
+    "base_url": "https://modelflare.dev/v1",
+    "api_family": "responses",
+    "model": "gpt-5.6-sol",
+    "key_env": "MODELFLARE_API_KEY",
+    "capabilities": [
+      "text",
+      "tools",
+      "images"
+    ],
+    "reasoning_effort": "low"
+  },
+  {
+    "name": "fast",
+    "provider": "modelflare",
+    "base_url": "https://modelflare.dev/v1",
+    "api_family": "responses",
+    "model": "gpt-6-luna",
+    "key_env": "MODELFLARE_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "reasoning_effort": "low"
+  },
+  {
+    "name": "vision",
+    "provider": "modelflare",
+    "base_url": "https://modelflare.dev/v1",
+    "api_family": "responses",
+    "model": "gpt-5.6-sol",
+    "key_env": "MODELFLARE_API_KEY",
+    "capabilities": [
+      "text",
+      "images"
+    ],
+    "reasoning_effort": "low"
+  },
+  {
+    "name": "local",
+    "provider": "ollama",
+    "base_url": "http://127.0.0.1:11435",
+    "api_family": "ollama",
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "key_env": "LOCAL_UNUSED",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "reasoning_effort": null,
+    "request_timeout": 45
+  }
 ]

@@ -1,0 +1,88 @@
+[
+  {
+    "name": "fast",
+    "provider": "siliconflow",
+    "base_url": "https://api.siliconflow.cn/v1",
+    "api_family": "chat",
+    "model": "Qwen/Qwen3-8B",
+    "key_env": "SILI_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "enable_thinking": false,
+    "request_timeout": 30,
+    "temperature": 0
+  },
+  {
+    "name": "standard",
+    "provider": "siliconflow",
+    "base_url": "https://api.siliconflow.cn/v1",
+    "api_family": "chat",
+    "model": "Pro/deepseek-ai/DeepSeek-V3.2",
+    "key_env": "SILI_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "enable_thinking": false,
+    "request_timeout": 45,
+    "temperature": 0
+  },
+  {
+    "name": "complex",
+    "provider": "siliconflow",
+    "base_url": "https://api.siliconflow.cn/v1",
+    "api_family": "chat",
+    "model": "Pro/deepseek-ai/DeepSeek-V3.2",
+    "key_env": "SILI_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "enable_thinking": false,
+    "request_timeout": 45,
+    "temperature": 0
+  },
+  {
+    "name": "vision",
+    "provider": "siliconflow",
+    "base_url": "https://api.siliconflow.cn/v1",
+    "api_family": "chat",
+    "model": "Qwen/Qwen3-VL-8B-Instruct",
+    "key_env": "SILI_API_KEY",
+    "capabilities": [
+      "text",
+      "images"
+    ],
+    "request_timeout": 45
+  },
+  {
+    "name": "local",
+    "provider": "ollama",
+    "base_url": "http://127.0.0.1:11435",
+    "api_family": "ollama",
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "key_env": "LOCAL_UNUSED",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "request_timeout": 45
+  },
+  {
+    "name": "control",
+    "provider": "siliconflow",
+    "base_url": "https://api.siliconflow.cn/v1",
+    "api_family": "chat",
+    "model": "Qwen/Qwen3-32B",
+    "key_env": "SILI_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "enable_thinking": false,
+    "temperature": 0,
+    "request_timeout": 30
+  }
+]

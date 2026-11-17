@@ -29,6 +29,7 @@ from fitlife.database import (
     Profile,
     User,
 )
+from fitlife.intent_constraints import activity_logging_scope
 from fitlife.manage import migrate
 from fitlife.model import Reply
 
@@ -43,7 +44,8 @@ class FixtureModel:
     async def complete(self, instructions, items, tools):
         type(self).calls += 1
         names = {t["name"] for t in tools}
-        assert names == BUSINESS_TOOLS
+        scope = activity_logging_scope(items[0]["content"])
+        assert names == (BUSINESS_TOOLS & scope if scope is not None else BUSINESS_TOOLS)
         assert not any("confirm" in name or "reject" in name for name in names)
         result = [i for i in items if i.get("type") == "function_call_output"]
         if result:

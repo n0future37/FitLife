@@ -1,0 +1,409 @@
+{
+  "version": "repcount-real-subset-v1",
+  "created_at": "2026-11-16T13:28:57.265119+00:00",
+  "reference": "https://svip-lab.github.io/dataset/RepCount_dataset.html",
+  "mirror": "https://huggingface.co/datasets/lmms-lab-eval/repcounta-lance",
+  "mirror_note": "RepCountA LLSP repack; not the Countix benchmark despite compatibility aliases",
+  "license_note": "mirror declares other; original dataset research attribution retained, no external redistribution performed",
+  "author_annotation_urls": [
+    "https://raw.githubusercontent.com/SvipRepetitionCounting/TransRAC/main/open_set/new_train.csv",
+    "https://raw.githubusercontent.com/SvipRepetitionCounting/TransRAC/main/open_set/new_test.csv",
+    "https://raw.githubusercontent.com/SvipRepetitionCounting/TransRAC/main/open_set/new_valid.csv"
+  ],
+  "selection": "fixed SHA256 seed, 1 development + 2 heldout per action, distinct available source groups, <=8MiB each, official CSV count agreement; selected before inference",
+  "source_group_limit": "stu prefix grouped; source-video identity for trainNNN names unavailable, cannot rule out all same-origin footage",
+  "supported_but_unmeasured": [
+    "biceps_curl"
+  ],
+  "cases": [
+    {
+      "video_id": "test2318",
+      "source_name": "test2318.mp4",
+      "action_type": "squant",
+      "count": 4,
+      "video_size_bytes": 391427,
+      "cycle_bounds_json": "[9, 59, 59, 127, 127, 193, 193, 257]",
+      "video_ext": ".mp4",
+      "id": "test2318",
+      "split": "dev",
+      "mirror_split": "train",
+      "exercise": "squat",
+      "source_group": "test2318",
+      "file": "data\\media-eval-v2\\repcount\\test2318.mp4",
+      "sha256": "990ed4fb6d8d11698d74ff6eae38fcfe15c16c44d3b09fa018759c364d1a3042",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu9_53",
+      "source_name": "stu9_53.mp4",
+      "action_type": "push_up",
+      "count": 39,
+      "video_size_bytes": 7336747,
+      "cycle_bounds_json": "[101, 132, 132, 157, 157, 181, 181, 206, 206, 229, 229, 256, 256, 279, 279, 305, 305, 329, 329, 352, 352, 378, 378, 402, 402, 428, 428, 453, 454, 480, 481, 506, 506, 529, 529, 557, 557, 580, 580, 607, 607, 632, 632, 656, 656, 681, 681, 708, 708, 733, 733, 759, 759, 784, 784, 811, 811, 836, 836, 861, 861, 887, 887, 912, 912, 939, 939, 963, 963, 989, 989, 1016, 1017, 1040, 1040, 1067, 1067, 1096]",
+      "video_ext": ".mp4",
+      "id": "stu9_53",
+      "split": "dev",
+      "mirror_split": "train",
+      "exercise": "push_up",
+      "source_group": "stu9",
+      "file": "data\\media-eval-v2\\repcount\\stu9_53.mp4",
+      "sha256": "1fc88cf4e70484841a0740caa9d5aef927dba63c9445451a396a649c7118f53e",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "val1099",
+      "source_name": "val1099.mp4",
+      "action_type": "situp",
+      "count": 4,
+      "video_size_bytes": 419876,
+      "cycle_bounds_json": "[45, 97, 97, 150, 150, 201, 201, 252]",
+      "video_ext": ".mp4",
+      "id": "val1099",
+      "split": "dev",
+      "mirror_split": "train",
+      "exercise": "sit_up",
+      "source_group": "val1099",
+      "file": "data\\media-eval-v2\\repcount\\val1099.mp4",
+      "sha256": "880168d05c048994237025b3227759ea2c8128c761ee11f0e6ba227d4423d17e",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train2484",
+      "source_name": "train2484.mp4",
+      "action_type": "pullups",
+      "count": 7,
+      "video_size_bytes": 387662,
+      "cycle_bounds_json": "[0, 36, 36, 77, 77, 120, 120, 163, 163, 210, 210, 250, 250, 298]",
+      "video_ext": ".mp4",
+      "id": "train2484",
+      "split": "dev",
+      "mirror_split": "train",
+      "exercise": "pull_up",
+      "source_group": "train2484",
+      "file": "data\\media-eval-v2\\repcount\\train2484.mp4",
+      "sha256": "b301c947f957cbe2cc0147ed086498b015f23550aa33f80134cc36c7cda05986",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu10_9",
+      "source_name": "stu10_9.mp4",
+      "action_type": "bench_pressing",
+      "count": 9,
+      "video_size_bytes": 7059881,
+      "cycle_bounds_json": "[0, 51, 51, 132, 132, 209, 210, 285, 285, 366, 366, 428, 432, 481, 481, 565, 565, 649]",
+      "video_ext": ".mp4",
+      "id": "stu10_9",
+      "split": "dev",
+      "mirror_split": "train",
+      "exercise": "bench_press",
+      "source_group": "stu10",
+      "file": "data\\media-eval-v2\\repcount\\stu10_9.mp4",
+      "sha256": "a73487956046c0f23cc4c917738b276f06273ea74686c5856b41228c99ffdff0",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test2315",
+      "source_name": "test2315.mp4",
+      "action_type": "squant",
+      "count": 3,
+      "video_size_bytes": 898656,
+      "cycle_bounds_json": "[0, 60, 86, 169, 170, 246]",
+      "video_ext": ".mp4",
+      "id": "test2315",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "squat",
+      "source_group": "test2315",
+      "file": "data\\media-eval-v2\\repcount\\test2315.mp4",
+      "sha256": "abe5ab26140aabff831d3a9a0d350bd38d958c5baba4ee9d2c8533a7583552b2",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu5_68",
+      "source_name": "stu5_68.mp4",
+      "action_type": "squat",
+      "count": 20,
+      "video_size_bytes": 7856403,
+      "cycle_bounds_json": "[150, 208, 208, 260, 260, 315, 315, 365, 365, 427, 427, 479, 479, 533, 533, 588, 588, 643, 643, 696, 912, 955, 955, 993, 993, 1024, 1024, 1060, 1060, 1093, 1093, 1130, 1130, 1166, 1166, 1200, 1200, 1231, 1231, 1274]",
+      "video_ext": ".mp4",
+      "id": "stu5_68",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "squat",
+      "source_group": "stu5",
+      "file": "data\\media-eval-v2\\repcount\\stu5_68.mp4",
+      "sha256": "cf6b7189d318d7609337f7d5d4fbc1c5e3b1ce264a2bcb1dbbc6c04a47848fef",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu8_45",
+      "source_name": "stu8_45.mp4",
+      "action_type": "push_up",
+      "count": 11,
+      "video_size_bytes": 4024466,
+      "cycle_bounds_json": "[24, 52, 52, 81, 81, 121, 121, 158, 158, 201, 201, 283, 316, 368, 368, 415, 415, 462, 473, 511, 511, 556]",
+      "video_ext": ".mp4",
+      "id": "stu8_45",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "push_up",
+      "source_group": "stu8",
+      "file": "data\\media-eval-v2\\repcount\\stu8_45.mp4",
+      "sha256": "259b3fb9d229cbe48945d60353f9434c41e7e0c88054c2b09e733b020a79bc1c",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu7_45",
+      "source_name": "stu7_45.mp4",
+      "action_type": "push_up",
+      "count": 3,
+      "video_size_bytes": 4651378,
+      "cycle_bounds_json": "[46, 140, 140, 251, 535, 623]",
+      "video_ext": ".mp4",
+      "id": "stu7_45",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "push_up",
+      "source_group": "stu7",
+      "file": "data\\media-eval-v2\\repcount\\stu7_45.mp4",
+      "sha256": "c38549c2d67dc02f4b2d9c0d995a8f33d5f539f80e2d6da2121bba3d290f33ee",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu3_57",
+      "source_name": "stu3_57.mp4",
+      "action_type": "situp",
+      "count": 19,
+      "video_size_bytes": 8012195,
+      "cycle_bounds_json": "[88, 130, 130, 166, 166, 201, 201, 236, 236, 272, 272, 306, 306, 344, 344, 380, 380, 415, 415, 452, 452, 486, 486, 521, 521, 559, 559, 594, 594, 630, 631, 666, 666, 701, 701, 738, 738, 778]",
+      "video_ext": ".mp4",
+      "id": "stu3_57",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "sit_up",
+      "source_group": "stu3",
+      "file": "data\\media-eval-v2\\repcount\\stu3_57.mp4",
+      "sha256": "7d3a29b9eef2f4951015bc705e170a50d6420e8d23fdc52a5b1509c609f3334f",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu1_60",
+      "source_name": "stu1_60.mp4",
+      "action_type": "situp",
+      "count": 12,
+      "video_size_bytes": 5805771,
+      "cycle_bounds_json": "[27, 100, 100, 167, 167, 224, 224, 285, 285, 350, 350, 411, 411, 469, 469, 525, 525, 598, 598, 665, 665, 726, 726, 779]",
+      "video_ext": ".mp4",
+      "id": "stu1_60",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "sit_up",
+      "source_group": "stu1",
+      "file": "data\\media-eval-v2\\repcount\\stu1_60.mp4",
+      "sha256": "d7dbe429408746118989a8ceda5466594e2691dc804de0b228ac662e87428537",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "stu2_39",
+      "source_name": "stu2_39.mp4",
+      "action_type": "pull_up",
+      "count": 6,
+      "video_size_bytes": 7358658,
+      "cycle_bounds_json": "[41, 109, 109, 190, 190, 258, 258, 336, 336, 396, 396, 461]",
+      "video_ext": ".mp4",
+      "id": "stu2_39",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "pull_up",
+      "source_group": "stu2",
+      "file": "data\\media-eval-v2\\repcount\\stu2_39.mp4",
+      "sha256": "bf01ad10d2e7b63909536963b6f78801749ce4407f534e89e346a181da98e6c4",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test1454",
+      "source_name": "test1454.mp4",
+      "action_type": "pullups",
+      "count": 6,
+      "video_size_bytes": 279114,
+      "cycle_bounds_json": "[25, 66, 66, 109, 109, 151, 151, 199, 199, 243, 243, 286]",
+      "video_ext": ".mp4",
+      "id": "test1454",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "pull_up",
+      "source_group": "test1454",
+      "file": "data\\media-eval-v2\\repcount\\test1454.mp4",
+      "sha256": "a1983916b73e2828af9506a27beba6d094c1435e1e127b3acd78d8cc8e2b7905",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "test135",
+      "source_name": "test135.mp4",
+      "action_type": "benchpressing",
+      "count": 4,
+      "video_size_bytes": 295883,
+      "cycle_bounds_json": "[3, 33, 33, 83, 83, 144, 144, 217]",
+      "video_ext": ".mp4",
+      "id": "test135",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "bench_press",
+      "source_group": "test135",
+      "file": "data\\media-eval-v2\\repcount\\test135.mp4",
+      "sha256": "54c02f12ad272e14fbe104ce34e3f5574ed3d9d6f59d217d93a1a9d10dd97faa",
+      "author_count_verified": true
+    },
+    {
+      "video_id": "train151",
+      "source_name": "train151.mp4",
+      "action_type": "benchpressing",
+      "count": 3,
+      "video_size_bytes": 83656,
+      "cycle_bounds_json": "[13, 33, 33, 51, 51, 74]",
+      "video_ext": ".mp4",
+      "id": "train151",
+      "split": "heldout",
+      "mirror_split": "test",
+      "exercise": "bench_press",
+      "source_group": "train151",
+      "file": "data\\media-eval-v2\\repcount\\train151.mp4",
+      "sha256": "df6ff9a186058f3ec67ef7fa327afde4fafa3801cc80b743fdda5540f79c2976",
+      "author_count_verified": true
+    }
+  ],
+  "prospective_exclusions": [
+    {
+      "id": "stu4_62",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu7_63",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu5_62",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu6_68",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu9_64",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu8_70",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu8_42",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu9_52",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu6_39",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu3_55",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu1_30",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu8_38",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu2_34",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu4_29",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu6_30",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu9_36",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu1_36",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu9_45",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu2_37",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu1_40",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu2_36",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu8_9",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu10_6",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu8_11",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu10_1",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu7_10",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu7_8",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu8_12",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu2_5",
+      "reason": "same_available_source_group_as_prior_case"
+    },
+    {
+      "id": "stu6_3",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "stu2_6",
+      "reason": "prospective_download_cap_8MiB"
+    },
+    {
+      "id": "train143",
+      "reason": "count_not_cross_verified_in_authors_csv"
+    },
+    {
+      "id": "stu7_13",
+      "reason": "prospective_download_cap_8MiB"
+    }
+  ]
+}

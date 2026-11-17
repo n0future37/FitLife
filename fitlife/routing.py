@@ -43,6 +43,15 @@ class Plan(Input):
     covers: dict[str, list[str]]
 
 
+class ModelRoute(Input):
+    name: str = Field(min_length=1, max_length=80)
+    profile: str = Field(min_length=1, max_length=40)
+    domains: list[Domain] = Field(min_length=1, max_length=3)
+    kinds: list[Literal["query", "deliverable"]] = Field(min_length=1, max_length=2)
+    allow_history: bool = False
+    allow_dependencies: bool = False
+
+
 def json_object(raw):
     raw = raw.strip()
     if raw.startswith("```json") and raw.endswith("```"):
@@ -95,9 +104,39 @@ def check_coverage(plan, requirements):
     return plan
 
 
+def has_complex_intent(text):
+    # Narrow direct negation only; unresolved language stays conservative.
+    positive = re.sub(
+        r"(?:不需要|不要|不做|不用|无需|无须|别)(?:再|进行|提供)?(?:建议|推荐|分析|估算|诊断)",
+        "",
+        text,
+    )
+    return bool(re.search(r"建议|推荐|分析|因果|估算|诊断|计划|修改|记录一下", positive))
+
+
 def select_model(settings, plan, name, requirements, history):
     selected, reason = "standard", "fixed_domain_model"
     relevant = [r for r in requirements if r.domain == name]
+    if settings.routing_policy == "rules":
+        if not settings.routing_rules_file:
+            raise ValueError("ROUTING_RULES_FILE_REQUIRED")
+        raw = json.loads(settings.routing_rules_file.read_text(encoding="utf-8"))
+        if not isinstance(raw, list) or not 1 <= len(raw) <= 20:
+            raise ValueError("INVALID_ROUTING_RULES")
+        rules = [ModelRoute.model_validate(r) for r in raw]
+        from fitlife.model_profiles import resolve
+
+        for rule in rules:
+            if (
+                name in rule.domains
+                and relevant
+                and all(r.kind in rule.kinds for r in relevant)
+                and (not history or rule.allow_history)
+                and (not plan.depends_on.get(name) or rule.allow_dependencies)
+            ):
+                resolve(settings, rule.profile, capability="tools")
+                return {"model": rule.profile, "reason": rule.name, "policy": "rules"}
+        return {"model": "standard", "reason": "no_rule_matched", "policy": "rules"}
     if settings.routing_policy == "conservative" and settings.easy_model:
         if (
             not history
@@ -109,10 +148,7 @@ def select_model(settings, plan, name, requirements, history):
                 and set(r.required_tools) <= DOMAIN_READ_TOOLS
                 for r in relevant
             )
-            and not any(
-                re.search(r"建议|推荐|分析|因果|估算|诊断|计划|修改|记录一下", r.text)
-                for r in relevant
-            )
+            and not any(has_complex_intent(r.text) for r in relevant)
         ):
             selected, reason = settings.easy_model, "single_domain_explicit_readonly_query"
         else:

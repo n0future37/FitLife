@@ -57,6 +57,7 @@ class Browser:
         return result.get("result", {}).get("value")
 
     async def wait(self, expression):
+        expression = "document.documentElement.dataset.appReady==='true' && (" + expression + ")"
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
             try:

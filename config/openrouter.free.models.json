@@ -1,0 +1,32 @@
+[
+  {
+    "name": "fast",
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_family": "chat",
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "key_env": "OPENROUTER_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "reasoning_effort": null,
+    "request_timeout": 45,
+    "free_only": true
+  },
+  {
+    "name": "standard",
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_family": "chat",
+    "model": "cohere/north-mini-code:free",
+    "key_env": "OPENROUTER_API_KEY",
+    "capabilities": [
+      "text",
+      "tools"
+    ],
+    "reasoning_effort": null,
+    "request_timeout": 45,
+    "free_only": true
+  }
+]

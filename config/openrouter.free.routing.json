@@ -1,0 +1,4 @@
+[
+  {"name":"fresh-readonly-free-fast","profile":"fast","domains":["exercise"],"kinds":["query"],"allow_history":false,"allow_dependencies":false},
+  {"name":"history-readonly-free-standard","profile":"standard","domains":["exercise"],"kinds":["query"],"allow_history":true,"allow_dependencies":false}
+]

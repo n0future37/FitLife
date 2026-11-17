@@ -14,8 +14,15 @@ data/
 *.key
 config/*
 !config/*.example.json
+!config/openrouter.free.models.json
+!config/openrouter.free.routing.json
+!config/siliconflow.models.json
 # 本机协作状态、原PyCharm示例及自动关机记录不属于发布源码。
 AGENTS.md
 STATE.md
 HISTORY.md
 main.py
+
+# Local learning notes and environment snapshot stay private.
+docs/learning-roadmap.md
+requirements-fit.snapshot.txt
