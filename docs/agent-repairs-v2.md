@@ -45,7 +45,7 @@
 ## 数据、费用与复现
 
 - 独立查询208个已登记合成用户，剩余0；本地兜底返回的3条业务记录也已不存在。回归运行的未经确认写入和跨用户修改规则均通过；原历史数据未迁移或清空。见 `cleanup-audit.json`。
-- 旧849项及补跑919项封存文件逐一 SHA256 复核，全部一致；见 `historical-integrity.json`。原0.6云CI与Linux验证不覆盖本轮新增；本轮未上传Git、未改简历、未重跑云CI或关机。
+- 旧849项及补跑919项封存文件逐一 SHA256 复核，全部一致；见 `historical-integrity.json`。原0.6云CI与Linux验证不覆盖本轮新增；该修复批次未运行云端CI。
 - 首个3元账本原样保留，另加最多2元账本，累计保护5元。已知Token费用估算0.564587元，5次未知费用继续保留；含25%余量的总保护占用2.77293375元，平台实扣未知；精确值见 `artifacts/agent-repairs-v2/budgets.json`。不清零未知预留，不把估算写成实扣。
 - 证据入口：`artifacts/agent-repairs-v2/verification.json`、`failure-audit.json`、`execution-stats-audit.json`、最终源码包与 `manifest.json`。各实验目录保留数据、协议、日期、源码快照、原始响应、工具轨迹和数据库状态。
 

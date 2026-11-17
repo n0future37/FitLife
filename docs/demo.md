@@ -4,6 +4,7 @@
 
 | 文件 | 展示内容 | 素材与响应 |
 | --- | --- | --- |
+| images/plan-adjustment.png | 计划调整前后差异、数据依据与确认 | 临时合成用户，固定模型回复 |
 | images/chat-confirmation.png | 补充步行时长、生成候选、等待确认 | 临时合成用户，固定模型回复 |
 | images/activity-mobile.png | 移动端活动录入与查询入口 | 同一合成用户，真实网页 |
 | images/media-review.png | 上传、后台分析与核对入口 | 合成色块，固定视觉响应 |
@@ -17,6 +18,7 @@
 ```powershell
 python -m fitlife.ui_check
 python -m fitlife.media_ui_check
+python -m fitlife.adjustment_ui_check
 ```
 
 检查程序只创建随机合成用户、使用固定模型响应；正常结束后定向清理，并把截图与报告写入本机被忽略的 artifacts/ui-checks/。没有云模型调用。公开截图由其中选取并目视审阅，不上传原报告中的运行细节。

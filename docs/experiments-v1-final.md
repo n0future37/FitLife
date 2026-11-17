@@ -140,4 +140,4 @@ Copy-Item -LiteralPath "artifacts/experiments-v1/cc2cea27-5a3d-4ead-8adc-d49394c
 ```
 
 
-双源码及逐条来源以副本中的protocol为准；combined是分析产物，不用于发起新的真实实验。本轮报告整理未新增模型调用、改动Agent策略或修改简历。
+双源码及逐条来源以副本中的protocol为准；combined是分析产物，不用于发起新的真实实验。该报告整理未新增模型调用或改动Agent策略。

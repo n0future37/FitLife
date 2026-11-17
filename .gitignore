@@ -26,3 +26,6 @@ main.py
 # Local learning notes and environment snapshot stay private.
 docs/learning-roadmap.md
 requirements-fit.snapshot.txt
+
+# Internal project walkthrough retained locally, excluded from the showcase.
+docs/project-understanding.md

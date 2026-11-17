@@ -89,9 +89,3 @@
 主证据：`artifacts/experiments-v1/99bc5e84-c55b-49b0-8810-b322a0ad5521`中的protocol、source.zip、dataset.jsonl、episodes.csv、architecture-analysis.json、failure-diagnostics.json、model-and-view-audit.json与逐例初/中/末状态。交付入口 `artifacts/architecture-v1/b93c4468-d0d0-4ace-94ac-7fc706087001` 包含旧批次、预算结转、软件回归、清理、源码和哈希清单。
 
 复核：`python -m scripts.analyze_architecture artifacts/experiments-v1/99bc5e84-c55b-49b0-8810-b322a0ad5521`。封存目录复核前应先复制到新目录，避免覆盖已封存的派生分析文件。原始轨迹和失败不能删除或择优替换。
-
-## 面试如何使用
-
-先说明为什么需要拆分的假设，再说明用同能力单Agent作对手、统一模型和服务端机制，最后引用本表实际结果，分别讲任务完成、上下文/费用和延迟。不能说“Agent越多越聪明”，不能把共用的事务/确认/隔离算成多Agent独有收益，也不能把全部Token差异归因于Agent数量。若只见上下文减少而未见成功率/延迟提升，应直接说明取舍。
-
-统一单Agent用法与模块理解见[unified-agent](unified-agent.md)。本次结束后保留两种模式，下一步回到项目复盘；不自动优化到某一方获胜或扩大实模。

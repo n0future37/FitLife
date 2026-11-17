@@ -42,7 +42,12 @@ PUBLIC_CONFIGS = {
     "openrouter.free.routing.json",
     "siliconflow.models.json",
 }
-PUBLIC_IMAGES = {"chat-confirmation.png", "activity-mobile.png", "media-review.png"}
+PUBLIC_IMAGES = {
+    "chat-confirmation.png",
+    "activity-mobile.png",
+    "media-review.png",
+    "plan-adjustment.png",
+}
 
 
 def files():
@@ -55,7 +60,7 @@ def files():
             and p.suffix in SUFFIXES
             and "__pycache__" not in p.parts
             and p.name not in {"AGENTS.md", "STATE.md", "HISTORY.md"}
-            and p.name != "learning-roadmap.md"
+            and p.name not in {"learning-roadmap.md", "project-understanding.md"}
             and (
                 p.suffix != ".png" or (p.parent == ROOT / "docs/images" and p.name in PUBLIC_IMAGES)
             )
@@ -97,7 +102,7 @@ def main():
         records[relative.as_posix()] = dict(sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
     manifest = dict(
         target_repository="https://github.com/n0future37/FitLife",
-        target_branch="codex/core-delivery",
+        target_branch="main",
         status="review_ready_not_uploaded",
         file_count=len(records),
         total_bytes=sum(r["bytes"] for r in records.values()),
