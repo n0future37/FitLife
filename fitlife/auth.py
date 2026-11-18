@@ -5,6 +5,7 @@ import secrets
 from datetime import timedelta
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from fitlife.business import Actor, BusinessError, utcnow
@@ -42,13 +43,12 @@ def authenticate(engine, token):
     if not isinstance(token, str) or len(token) != 43:
         raise BusinessError("UNAUTHENTICATED")
     with Session(engine) as session:
-        credential = session.get(AccessToken, digest_token(token))
-        if (
-            credential is None
-            or credential.revoked
-            or credential.expires_at <= utcnow()
-            or session.get(User, credential.owner_id) is None
-        ):
+        credential = session.scalar(
+            select(AccessToken)
+            .join(User, User.id == AccessToken.owner_id)
+            .where(AccessToken.digest == digest_token(token))
+        )
+        if credential is None or credential.revoked or credential.expires_at <= utcnow():
             raise BusinessError("UNAUTHENTICATED")
         return Actor(UUID(credential.owner_id))
 

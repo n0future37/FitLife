@@ -8,7 +8,17 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = ("fitlife", "migrations", "tests", "scripts", "evals", "docs", ".github", "config")
+DIRECTORIES = (
+    "fitlife",
+    "migrations",
+    "tests",
+    "scripts",
+    "evals",
+    "docs",
+    ".github",
+    "config",
+    "benchmarks",
+)
 ROOT_FILES = (
     "README.md",
     "pyproject.toml",
@@ -33,6 +43,7 @@ SUFFIXES = {
     ".yml",
     ".mako",
     ".ps1",
+    ".sh",
     ".png",
 }
 
@@ -57,10 +68,18 @@ def files():
             p
             for p in (ROOT / directory).rglob("*")
             if p.is_file()
-            and p.suffix in SUFFIXES
+            and (p.suffix in SUFFIXES or p.name == "Dockerfile")
             and "__pycache__" not in p.parts
             and p.name not in {"AGENTS.md", "STATE.md", "HISTORY.md"}
-            and p.name not in {"learning-roadmap.md", "project-understanding.md"}
+            and p.name
+            not in {
+                "learning-roadmap.md",
+                "project-understanding.md",
+                "backend-load-v1.md",
+                "http-repair-v1.md",
+                "tail-latency-v1.md",
+                "latency-v2.md",
+            }
             and (
                 p.suffix != ".png" or (p.parent == ROOT / "docs/images" and p.name in PUBLIC_IMAGES)
             )

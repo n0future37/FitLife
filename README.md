@@ -132,7 +132,7 @@ python -m fitlife.server --environment dev
 
 ## 测试与评测
 
-本次发布前本机验证：**172 项回归通过**，Ruff 检查与 136 个文件格式检查通过，对话与媒体真实浏览器验收通过。均为本次 Windows 环境结果；云端 CI 状态以对应提交的 Actions 运行结果为准。
+2026-11-18增量验证：本地 **146 项通过、45 项集成跳过**，另有真实 MySQL/MCP API **9 项验收通过**；后端针对性压测33档、60,191次业务操作、业务错误0。历史172项完整回归和页面截图属于2026-11-17时点。云端CI以对应提交的Actions结果为准。
 
 普通回归使用固定模型响应，不调用云模型；真实模型实验必须显式启用，并单独记录模型、提示词、数据、费用与轨迹。
 
@@ -151,6 +151,10 @@ python -m fitlife.media_ui_check
 ```
 
 不加 `--integration` 时，数据库集成用例会跳过。集成测试仅使用 `fitlife_test` 和随机合成用户，最后定向清理。GitHub Actions 使用一次性 MySQL/Redis、固定模型响应和独立运行产物，不读取本机凭据。
+
+### 后端性能与可靠执行
+
+修复继承socket的TCP_NODELAY、保留HTTP闲置连接余量、限制数据库请求排队，并合并认证查询。固定模型后端对照中，32并发完整写入吞吐127.3→135.2操作每秒，P99均值446.2→388.1ms；活动分页未改善，长尾仍有波动。条件、全部设置和限制见[性能报告](docs/performance.md)。
 
 ### 单 Agent 与多 Agent 的实测取舍
 
@@ -183,6 +187,7 @@ python -m fitlife.media_ui_check
 | `fitlife/api.py`、`database.py`、`migrations/` | API、数据模型、迁移 |
 | `fitlife/web/` | 网页与交互 |
 | `fitlife/media*.py`、`video_*.py` | 媒体任务、观察、计数 |
+| `benchmarks/` | 隔离合成后端压测与脱敏聚合结果 |
 | `evals/`、`tests/` | 合成用例、公开数据索引、自动化检查 |
 | `docs/` | 架构、实验、运行与能力限制 |
 

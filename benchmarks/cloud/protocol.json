@@ -1,0 +1,19 @@
+{
+  "version": "cloud-backend-v1",
+  "purpose": "real TCP backend load, correctness under concurrency, bounded overload and recovery",
+  "matrix": {
+    "app_workers": [1, 2],
+    "scenarios": ["profile", "activities", "propose_confirm"],
+    "concurrencies": [1, 8, 32],
+    "seconds_per_trial": 20,
+    "repeats": 3,
+    "total_trials": 54
+  },
+  "seed": {"users": 32, "activity_rows": 3200, "kind": "synthetic confirmed activities"},
+  "safety_checks": ["no_auth_401", "foreign_owner_404", "no_write_before_confirmation", "invalid_digest_409", "32_duplicate_proposals_one_action", "32_duplicate_confirmations_one_activity", "same_key_changed_payload_409", "invalid_input_422"],
+  "agent_capacity": {"requests_per_batch": 8, "batches_per_worker_configuration": 3, "shared_capacity": 2, "fixed_model_delay_seconds": 2.5, "real_mcp_query": true, "real_model_calls": 0},
+  "overload": {"app_workers": 2, "read_only": true, "concurrencies": [64, 128, 256], "seconds_per_trial": 30, "repeats_per_level": 2, "stop_on_first_boundary": true, "recovery_seconds": 15},
+  "latency": "nearest-rank percentiles of successful operation wall time; drain included, warmup excluded",
+  "reporting": "per-trial successful throughput, P50/P95/P99, errors/statuses, resource samples, actual database row delta, cleanup; preserve failures",
+  "limitations": ["same-host generator competes with app/database", "closed-loop is not fixed offered QPS", "bounded ramp does not prove an absolute maximum", "fixed-model Agent test is not model quality or multi-agent throughput", "not public network performance"]
+}

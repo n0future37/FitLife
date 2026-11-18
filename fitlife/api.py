@@ -8,7 +8,7 @@ from typing import Annotated
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -32,6 +32,7 @@ from fitlife.business import (
     Input,
     ProfilePatch,
 )
+from fitlife.database_admission import DatabaseRequestGate
 from fitlife.model import Settings
 from fitlife.plan_types import PlanRequest
 from fitlife.planning import PlanningService
@@ -146,6 +147,8 @@ def create_app(
         engine.dispose()
 
     app = FastAPI(title="FitLife", version=__version__, lifespan=lifespan)
+    database_gate = DatabaseRequestGate(engine.pool.size(), engine.pool.timeout())
+    database_api = APIRouter(dependencies=[Depends(database_gate, scope="function")])
     web = Path(__file__).parent / "web"
     app.mount("/assets", StaticFiles(directory=web), name="assets")
 
@@ -211,7 +214,9 @@ def create_app(
     async def database_error(request, exc):
         return JSONResponse(status_code=503, content={"error_code": "DATABASE_UNAVAILABLE"})
 
-    def identity(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
+    def identity(
+        credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    ):
         if credentials is None:
             raise HTTPException(
                 401, detail="UNAUTHENTICATED", headers={"WWW-Authenticate": "Bearer"}
@@ -228,7 +233,7 @@ def create_app(
 
     from fitlife.media_api import register as register_media
 
-    register_media(app, engine, db_settings.environment, identity)
+    register_media(database_api, engine, db_settings.environment, identity)
 
     @app.get("/health")
     def health():
@@ -248,7 +253,7 @@ def create_app(
             return JSONResponse(status_code=503, content={"status": "not_ready"})
         return {"status": "ready", "shared_capacity": capacity is not None}
 
-    @app.get("/me")
+    @database_api.get("/me")
     def me(actor: Identity):
         return {"user_id": str(actor.user_id)}
 
@@ -256,11 +261,11 @@ def create_app(
 
     history = HistoryService(engine)
 
-    @app.get("/history")
+    @database_api.get("/history")
     def history_summary(actor: Identity):
         return history.summary(actor)
 
-    @app.get("/history/{table}")
+    @database_api.get("/history/{table}")
     def history_records(
         table: str,
         actor: Identity,
@@ -269,43 +274,47 @@ def create_app(
     ):
         return history.records(actor, table, offset, limit)
 
-    @app.delete("/auth/token", status_code=204)
+    @database_api.delete("/auth/token", status_code=204)
     def revoke(
-        actor: Identity, credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)]
+        actor: Identity,
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
     ):
         revoke_token(engine, credentials.credentials)
 
-    @app.get("/profile")
+    @database_api.get("/profile")
     def profile(actor: Identity):
         return service.get_profile(actor)
 
-    @app.post("/profile/forget-actions")
+    @database_api.post("/profile/forget-actions")
     def forget_profile(body: ForgetProfile, actor: Identity, request_key: RequestKey):
         return service.propose(
-            actor, "profile_forget", body.model_dump(mode="json"), "http:" + str(request_key)
+            actor,
+            "profile_forget",
+            body.model_dump(mode="json"),
+            "http:" + str(request_key),
         )
 
-    @app.post("/conversations")
+    @database_api.post("/conversations")
     def create_conversation(actor: Identity):
         return conversations.create(engine, actor)
 
-    @app.get("/conversations")
+    @database_api.get("/conversations")
     def list_conversations(actor: Identity):
         return conversations.recent(engine, actor)
 
-    @app.get("/conversations/{conversation_id}")
+    @database_api.get("/conversations/{conversation_id}")
     def get_conversation(conversation_id: UUID, actor: Identity):
         return conversations.transcript(engine, actor, conversation_id)
 
-    @app.delete("/conversations/{conversation_id}")
+    @database_api.delete("/conversations/{conversation_id}")
     def delete_conversation(conversation_id: UUID, actor: Identity):
         return conversations.erase(engine, actor, conversation_id)
 
-    @app.patch("/conversations/{conversation_id}/title")
+    @database_api.patch("/conversations/{conversation_id}/title")
     def rename_conversation(conversation_id: UUID, body: ConversationTitle, actor: Identity):
         return conversations.rename(engine, actor, conversation_id, body.title, body.revision)
 
-    @app.post("/profile/actions")
+    @database_api.post("/profile/actions")
     def propose_profile(body: ProfilePatch, actor: Identity, request_key: RequestKey):
         return service.propose(
             actor,
@@ -314,57 +323,64 @@ def create_app(
             "http:" + str(request_key),
         )
 
-    @app.get("/activities")
+    @database_api.get("/activities")
     def activities(
-        start_date: date, end_date: date, actor: Identity, limit: int = 100, offset: int = 0
+        start_date: date,
+        end_date: date,
+        actor: Identity,
+        limit: int = 100,
+        offset: int = 0,
     ):
         return service.list_activities(actor, start_date, end_date, limit, offset)
 
-    @app.post("/activities/{record_id}/deletion-actions")
+    @database_api.post("/activities/{record_id}/deletion-actions")
     def delete_activity(record_id: UUID, actor: Identity, request_key: RequestKey):
         return service.propose_activity_deletion(actor, record_id, "http:" + str(request_key))
 
-    @app.post("/activities/actions")
+    @database_api.post("/activities/actions")
     def propose_activity(body: ActivityInput, actor: Identity, request_key: RequestKey):
         return service.propose(
-            actor, "record_activity", body.model_dump(mode="json"), "http:" + str(request_key)
+            actor,
+            "record_activity",
+            body.model_dump(mode="json"),
+            "http:" + str(request_key),
         )
 
-    @app.get("/actions/{action_id}")
+    @database_api.get("/actions/{action_id}")
     def action(action_id: UUID, actor: Identity):
         return service.get_action(actor, action_id)
 
-    @app.get("/plans/{week_start}")
+    @database_api.get("/plans/{week_start}")
     def plan(week_start: date, actor: Identity):
         return service.get_plan(actor, week_start)
 
-    @app.get("/plans/{week_start}/progress")
+    @database_api.get("/plans/{week_start}/progress")
     def progress(week_start: date, actor: Identity):
         return service.get_progress(actor, week_start)
 
-    @app.post("/plans/actions")
+    @database_api.post("/plans/actions")
     def propose_plan(body: PlanRequest, actor: Identity, request_key: RequestKey):
         return service.propose_plan(actor, body, "http:" + str(request_key))
 
-    @app.get("/plans/{week_start}/adjustment-context")
+    @database_api.get("/plans/{week_start}/adjustment-context")
     def plan_adjustment_context(
         week_start: date, actor: Identity, reference_week_start: date | None = None
     ):
         return adjustment_context(service, actor, week_start, reference_week_start)
 
-    @app.post("/plans/adjustment-actions")
+    @database_api.post("/plans/adjustment-actions")
     def propose_adjustment(body: AdjustmentRequest, actor: Identity, request_key: RequestKey):
         return adjustment_propose(service, actor, body, "http:" + str(request_key))
 
-    @app.post("/actions/{action_id}/confirm")
+    @database_api.post("/actions/{action_id}/confirm")
     def confirm(action_id: UUID, body: Confirmation, actor: Identity):
         return service.confirm(actor, action_id, body.revision, body.digest)
 
-    @app.post("/actions/{action_id}/reject")
+    @database_api.post("/actions/{action_id}/reject")
     def reject(action_id: UUID, body: Confirmation, actor: Identity):
         return service.reject(actor, action_id, body.revision, body.digest)
 
-    @app.patch("/actions/{action_id}")
+    @database_api.patch("/actions/{action_id}")
     def revise(action_id: UUID, body: Revision, actor: Identity):
         return service.revise(actor, action_id, body.revision, body.digest, body.payload)
 
@@ -400,7 +416,13 @@ def create_app(
         if recovered:
             response = {**candidate_response(recovered, 0), "recovered": True}
             await asyncio.to_thread(
-                requests.finish, engine, actor, claimed["id"], claimed["nonce"], response, True
+                requests.finish,
+                engine,
+                actor,
+                claimed["id"],
+                claimed["nonce"],
+                response,
+                True,
             )
             return response
         acquired = False
@@ -464,7 +486,14 @@ def create_app(
             result = await run(message, context=context, model_factory=model_factory)
             response = {
                 k: result[k]
-                for k in ("run_id", "answer", "end_reason", "steps", "pending_action", "degraded")
+                for k in (
+                    "run_id",
+                    "answer",
+                    "end_reason",
+                    "steps",
+                    "pending_action",
+                    "degraded",
+                )
                 if k in result
             }
             successful = result["end_reason"] in {
@@ -485,7 +514,8 @@ def create_app(
             )
             if not successful:
                 raise HTTPException(
-                    502, detail={"error_code": "AGENT_FAILED", "run_id": result["run_id"]}
+                    502,
+                    detail={"error_code": "AGENT_FAILED", "run_id": result["run_id"]},
                 )
             return response
         except HTTPException as exc:
@@ -509,4 +539,5 @@ def create_app(
             if acquired:
                 gate.release()
 
+    app.include_router(database_api)
     return app

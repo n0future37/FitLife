@@ -29,3 +29,9 @@ requirements-fit.snapshot.txt
 
 # Internal project walkthrough retained locally, excluded from the showcase.
 docs/project-understanding.md
+
+# Private performance investigations; publish sanitized performance.md instead.
+docs/backend-load-v1.md
+docs/http-repair-v1.md
+docs/latency-v2.md
+docs/tail-latency-v1.md

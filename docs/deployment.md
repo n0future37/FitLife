@@ -6,13 +6,15 @@
 
 ## Docker Desktop / Linux
 
+当前Compose默认使用`fitlife:latest`，可用`FITLIFE_IMAGE`指定已验证提交标签；本机同时保留按Git提交标记的运行及测试镜像。旧版本镜像不覆盖。镜像尚未推送远程镜像仓库，以上是本机构建命令。
+
 镜像：Python3.12.16-slim，固定已验证基础摘要；以UID10001非root运行，业务产物写/app/artifacts，私有媒体写/app/data；镜像包含FFmpeg/FFprobe。
 构建上下文只允许代码、迁移、测试、合成评测与依赖元数据，不含.env、旧main/.idea、个人数据或artifacts。
 测试镜像另含开发工具；运行镜像不安装pytest。Windows专属pywin32按平台标记排除。
 
 ```powershell
-docker build --target runtime -t fitlife:0.6.0 .
-docker build --target test -t fitlife:test-0.6.0 .
+docker build --target runtime -t fitlife:latest .
+docker build --target test -t fitlife:test-latest .
 ```
 
 compose.yaml只启动FitLife应用，连接现有host.docker.internal:3306/6379，不重建公共MySQL/Redis。

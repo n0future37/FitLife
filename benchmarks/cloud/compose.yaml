@@ -1,0 +1,79 @@
+name: fitlife-benchmark
+x-client: &client
+  image: fitlife-benchmark:v1
+  environment:
+    FITLIFE_BENCHMARK_ONLY: "1"
+    FITLIFE_DB_ENVIRONMENT: test
+    FITLIFE_DB_HOST: mysql
+    FITLIFE_DB_PASSWORD_FILE: /run/secrets/db_password
+    FITLIFE_REDIS_HOST: redis
+    FITLIFE_REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    FITLIFE_BASE_URL: http://127.0.0.1:9
+    FITLIFE_FALLBACK_PROFILE: ""
+    FITLIFE_ROUTING_POLICY: fixed
+  secrets: [db_password, redis_password]
+  networks: [isolated]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  init: true
+services:
+  mysql:
+    image: mirror.ccs.tencentyun.com/library/mysql:8.4.13@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/root_password
+      MYSQL_DATABASE: fitlife_test
+      MYSQL_USER: fit_test
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [root_password, db_password]
+    command: [--innodb-buffer-pool-size=256M, --max-connections=60, --performance-schema=OFF]
+    volumes: [mysql_data:/var/lib/mysql]
+    networks: [isolated]
+    mem_limit: 1200m
+    cpus: 1.0
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD=$$(cat /run/secrets/db_password) mysql -h 127.0.0.1 -u fit_test fitlife_test -Nse "SELECT 1" >/dev/null']
+      interval: 5s
+      timeout: 4s
+      retries: 30
+    restart: unless-stopped
+  redis:
+    image: mirror.ccs.tencentyun.com/library/redis:7.4.12@sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90
+    command: [redis-server, /run/secrets/redis_config]
+    secrets: [redis_config, redis_password]
+    networks: [isolated]
+    mem_limit: 128m
+    cpus: 0.25
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH=$$(cat /run/secrets/redis_password) redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+  app:
+    <<: *client
+    build:
+      context: ../..
+      dockerfile: benchmarks/cloud/Dockerfile
+    command: [python, -m, benchmarks.cloud.serve, --workers, '${APP_WORKERS:-2}']
+    volumes: [../../artifacts/cloud-benchmark:/app/artifacts]
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    mem_limit: 1024m
+    cpus: 2.0
+    restart: unless-stopped
+  load:
+    <<: *client
+    profiles: [tools]
+    volumes: [../../artifacts/cloud-benchmark:/app/artifacts]
+    mem_limit: 512m
+    cpus: 1.0
+secrets:
+  root_password: {file: '${FITLIFE_BENCH_SECRETS:?Set a private directory}/root_password'}
+  db_password: {file: '${FITLIFE_BENCH_SECRETS:?Set a private directory}/db_password'}
+  redis_password: {file: '${FITLIFE_BENCH_SECRETS:?Set a private directory}/redis_password'}
+  redis_config: {file: '${FITLIFE_BENCH_SECRETS:?Set a private directory}/redis_config'}
+networks:
+  isolated: {internal: true}
+volumes:
+  mysql_data:

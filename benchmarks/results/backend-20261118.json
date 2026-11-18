@@ -1,0 +1,630 @@
+{
+  "recorded_date": "2026-11-18",
+  "scope": "fixed-model synthetic HTTP backend benchmark, not real-model task quality or public-network SLA",
+  "conditions": {
+    "app_workers": 2,
+    "app_cpu": 2,
+    "app_memory_mib": 1024,
+    "db_pool_per_worker": 5,
+    "admission_limit_per_worker": 5,
+    "driver_cpu": 1.0,
+    "mysql_cpu": 1,
+    "keepalive_expiry_seconds": 2,
+    "server_keepalive_seconds": 5,
+    "automatic_retries": 0,
+    "synthetic_users": 32,
+    "seed_activities": 3200,
+    "c1": {
+      "concurrency": 1,
+      "seconds": 12,
+      "scenarios": [
+        "profile",
+        "activities",
+        "propose_confirm"
+      ],
+      "repeats_per_setting": 3,
+      "trials": 27
+    },
+    "c32": {
+      "concurrency": 32,
+      "seconds": 30,
+      "scenarios": [
+        "propose_confirm"
+      ],
+      "settings": [
+        "gate",
+        "join"
+      ],
+      "repeats_per_setting": 3,
+      "trials": 6
+    }
+  },
+  "variants": {
+    "transport": "no database request admission; two-query authentication",
+    "gate": "admission 5 per worker; two-query authentication",
+    "join": "admission 5 per worker; joined authentication"
+  },
+  "trials": 33,
+  "timed_business_operations": 60191,
+  "timed_http_requests": 88802,
+  "business_errors": 0,
+  "statistics": "arithmetic mean and range of 3 per-trial throughput or percentile values, not pooled percentiles",
+  "groups": [
+    {
+      "concurrency": 1,
+      "scenario": "profile",
+      "settings": {
+        "transport": {
+          "trials": 3,
+          "operations": 6490,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 180.23666666666668,
+            "min": 179.366,
+            "max": 180.699,
+            "samples": [
+              180.699,
+              180.645,
+              179.366
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 5.318,
+            "min": 5.294,
+            "max": 5.346,
+            "samples": [
+              5.346,
+              5.294,
+              5.314
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 7.156,
+            "min": 6.997,
+            "max": 7.359,
+            "samples": [
+              6.997,
+              7.112,
+              7.359
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 8.280333333333333,
+            "min": 7.968,
+            "max": 8.805,
+            "samples": [
+              7.968,
+              8.068,
+              8.805
+            ]
+          }
+        },
+        "gate": {
+          "trials": 3,
+          "operations": 6212,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 172.49800000000002,
+            "min": 169.323,
+            "max": 175.109,
+            "samples": [
+              175.109,
+              169.323,
+              173.062
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 5.600333333333333,
+            "min": 5.531,
+            "max": 5.72,
+            "samples": [
+              5.531,
+              5.72,
+              5.55
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 7.421,
+            "min": 7.095,
+            "max": 7.743,
+            "samples": [
+              7.095,
+              7.743,
+              7.425
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 8.688333333333334,
+            "min": 8.086,
+            "max": 9.242,
+            "samples": [
+              8.086,
+              9.242,
+              8.737
+            ]
+          }
+        },
+        "join": {
+          "trials": 3,
+          "operations": 6840,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 189.95,
+            "min": 186.95,
+            "max": 193.064,
+            "samples": [
+              193.064,
+              189.836,
+              186.95
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 5.0873333333333335,
+            "min": 4.998,
+            "max": 5.261,
+            "samples": [
+              5.003,
+              4.998,
+              5.261
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 6.6386666666666665,
+            "min": 6.397,
+            "max": 6.945,
+            "samples": [
+              6.397,
+              6.945,
+              6.574
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 7.648666666666666,
+            "min": 7.323,
+            "max": 7.882,
+            "samples": [
+              7.323,
+              7.882,
+              7.741
+            ]
+          }
+        }
+      },
+      "transport_to_gate": {
+        "successful_operations_per_second": -4.293613952026032,
+        "p95_success_ms": 3.7031861375069974,
+        "p99_success_ms": 4.927337868845871
+      },
+      "gate_to_join": {
+        "successful_operations_per_second": 10.117218750362312,
+        "p95_success_ms": -10.542155145308364,
+        "p99_success_ms": -11.966238250527539
+      },
+      "transport_to_join": {
+        "successful_operations_per_second": 5.389210482513729,
+        "p95_success_ms": -7.229364635736912,
+        "p99_success_ms": -7.628517370476229
+      }
+    },
+    {
+      "concurrency": 1,
+      "scenario": "activities",
+      "settings": {
+        "transport": {
+          "trials": 3,
+          "operations": 4208,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 116.85966666666667,
+            "min": 100.228,
+            "max": 126.492,
+            "samples": [
+              126.492,
+              100.228,
+              123.859
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 8.441333333333333,
+            "min": 7.688,
+            "max": 9.736,
+            "samples": [
+              7.688,
+              9.736,
+              7.9
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 10.358333333333334,
+            "min": 9.603,
+            "max": 11.685,
+            "samples": [
+              9.603,
+              11.685,
+              9.787
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 11.716999999999999,
+            "min": 10.806,
+            "max": 13.19,
+            "samples": [
+              11.155,
+              13.19,
+              10.806
+            ]
+          }
+        },
+        "gate": {
+          "trials": 3,
+          "operations": 3957,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 109.866,
+            "min": 103.923,
+            "max": 121.456,
+            "samples": [
+              121.456,
+              103.923,
+              104.219
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 9.165666666666667,
+            "min": 8.036,
+            "max": 9.773,
+            "samples": [
+              8.036,
+              9.773,
+              9.688
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 11.391,
+            "min": 10.159,
+            "max": 12.054,
+            "samples": [
+              10.159,
+              11.96,
+              12.054
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 12.745333333333333,
+            "min": 11.421,
+            "max": 13.589,
+            "samples": [
+              11.421,
+              13.589,
+              13.226
+            ]
+          }
+        },
+        "join": {
+          "trials": 3,
+          "operations": 3873,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 107.549,
+            "min": 95.969,
+            "max": 128.662,
+            "samples": [
+              95.969,
+              98.016,
+              128.662
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 9.215,
+            "min": 7.562,
+            "max": 10.123,
+            "samples": [
+              10.123,
+              9.96,
+              7.562
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 11.462,
+            "min": 9.416,
+            "max": 12.728,
+            "samples": [
+              12.728,
+              12.242,
+              9.416
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 12.579,
+            "min": 10.342,
+            "max": 13.731,
+            "samples": [
+              13.731,
+              13.664,
+              10.342
+            ]
+          }
+        }
+      },
+      "transport_to_gate": {
+        "successful_operations_per_second": -5.984671072711145,
+        "p95_success_ms": 9.969428801287194,
+        "p99_success_ms": 8.776421723421812
+      },
+      "gate_to_join": {
+        "successful_operations_per_second": -2.1089326998343427,
+        "p95_success_ms": 0.6232990957773632,
+        "p99_success_ms": -1.3050528297939068
+      },
+      "transport_to_join": {
+        "successful_operations_per_second": -7.967391087315557,
+        "p95_success_ms": 10.654867256637157,
+        "p99_success_ms": 7.356831953571752
+      }
+    },
+    {
+      "concurrency": 1,
+      "scenario": "propose_confirm",
+      "settings": {
+        "transport": {
+          "trials": 3,
+          "operations": 1648,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 45.74133333333334,
+            "min": 44.533,
+            "max": 46.988,
+            "samples": [
+              44.533,
+              45.703,
+              46.988
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 21.565333333333335,
+            "min": 20.844,
+            "max": 22.203,
+            "samples": [
+              22.203,
+              21.649,
+              20.844
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 25.459,
+            "min": 24.872,
+            "max": 26.095,
+            "samples": [
+              26.095,
+              25.41,
+              24.872
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 28.239666666666665,
+            "min": 27.298,
+            "max": 28.742,
+            "samples": [
+              28.742,
+              28.679,
+              27.298
+            ]
+          }
+        },
+        "gate": {
+          "trials": 3,
+          "operations": 1594,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 44.23433333333333,
+            "min": 43.547,
+            "max": 44.8,
+            "samples": [
+              44.356,
+              43.547,
+              44.8
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 22.244333333333334,
+            "min": 21.959,
+            "max": 22.655,
+            "samples": [
+              22.119,
+              22.655,
+              21.959
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 26.348,
+            "min": 26.118,
+            "max": 26.543,
+            "samples": [
+              26.543,
+              26.383,
+              26.118
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 29.421666666666667,
+            "min": 28.365,
+            "max": 30.243,
+            "samples": [
+              30.243,
+              29.657,
+              28.365
+            ]
+          }
+        },
+        "join": {
+          "trials": 3,
+          "operations": 1627,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 45.16566666666667,
+            "min": 44.082,
+            "max": 45.987,
+            "samples": [
+              44.082,
+              45.428,
+              45.987
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 21.767333333333333,
+            "min": 21.349,
+            "max": 22.345,
+            "samples": [
+              22.345,
+              21.608,
+              21.349
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 26.322666666666667,
+            "min": 25.506,
+            "max": 27.156,
+            "samples": [
+              27.156,
+              26.306,
+              25.506
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 28.508,
+            "min": 27.521,
+            "max": 29.438,
+            "samples": [
+              29.438,
+              28.565,
+              27.521
+            ]
+          }
+        }
+      },
+      "transport_to_gate": {
+        "successful_operations_per_second": -3.2946131871975814,
+        "p95_success_ms": 3.491888919439101,
+        "p99_success_ms": 4.185601813052564
+      },
+      "gate_to_join": {
+        "successful_operations_per_second": 2.1054535315705003,
+        "p95_success_ms": -0.0961489803147586,
+        "p99_success_ms": -3.105421174871126
+      },
+      "transport_to_join": {
+        "successful_operations_per_second": -1.258526205328525,
+        "p95_success_ms": 3.392382523534576,
+        "p99_success_ms": 0.9502000731831162
+      }
+    },
+    {
+      "concurrency": 32,
+      "scenario": "propose_confirm",
+      "settings": {
+        "gate": {
+          "trials": 3,
+          "operations": 11519,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 127.30766666666666,
+            "min": 125.8,
+            "max": 129.849,
+            "samples": [
+              126.274,
+              129.849,
+              125.8
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 248.62133333333333,
+            "min": 243.606,
+            "max": 256.246,
+            "samples": [
+              256.246,
+              243.606,
+              246.012
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 320.57033333333334,
+            "min": 294.728,
+            "max": 337.453,
+            "samples": [
+              329.53,
+              294.728,
+              337.453
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 446.2223333333333,
+            "min": 339.597,
+            "max": 613.892,
+            "samples": [
+              385.178,
+              339.597,
+              613.892
+            ]
+          }
+        },
+        "join": {
+          "trials": 3,
+          "operations": 12223,
+          "errors": 0,
+          "successful_operations_per_second": {
+            "mean": 135.15566666666666,
+            "min": 131.536,
+            "max": 140.999,
+            "samples": [
+              140.999,
+              132.932,
+              131.536
+            ]
+          },
+          "p50_success_ms": {
+            "mean": 232.34733333333332,
+            "min": 222.92,
+            "max": 239.596,
+            "samples": [
+              222.92,
+              234.526,
+              239.596
+            ]
+          },
+          "p95_success_ms": {
+            "mean": 289.057,
+            "min": 273.176,
+            "max": 301.067,
+            "samples": [
+              273.176,
+              301.067,
+              292.928
+            ]
+          },
+          "p99_success_ms": {
+            "mean": 388.08566666666667,
+            "min": 336.187,
+            "max": 483.499,
+            "samples": [
+              336.187,
+              483.499,
+              344.571
+            ]
+          }
+        }
+      },
+      "gate_to_join": {
+        "successful_operations_per_second": 6.16459338662505,
+        "p95_success_ms": -9.830396033735699,
+        "p99_success_ms": -13.028632213986002
+      }
+    }
+  ],
+  "limitations": [
+    "3 short closed-loop repetitions per setting",
+    "same host for app and load generator",
+    "activity C1 throughput did not improve",
+    "write P99 still has reverse samples and variation",
+    "raw traces and private environment details retained locally; only aggregate results published"
+  ]
+}

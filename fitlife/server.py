@@ -13,6 +13,7 @@ from fitlife.capacity import RedisCapacity, RedisSettings
 from fitlife.credentials import database_password
 from fitlife.database import DatabaseSettings
 from fitlife.db_check import migration_config
+from fitlife.http_protocol import NoDelayH11Protocol
 from fitlife.model import Settings
 
 
@@ -59,7 +60,7 @@ def main():
             )
         )
         app = create_app(settings, engine=engine, capacity=capacity, media_worker_enabled=True)
-        uvicorn.run(app, host=args.host, port=args.port, access_log=False)
+        uvicorn.run(app, host=args.host, port=args.port, http=NoDelayH11Protocol, access_log=False)
     except Exception as exc:
         print(f"服务未正常启动/结束：{type(exc).__name__}。请检查本机配置及迁移版本。")
         raise SystemExit(1) from None

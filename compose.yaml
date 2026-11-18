@@ -2,7 +2,7 @@ name: fitlife
 services:
   app:
     build: .
-    image: fitlife:0.6.0
+    image: ${FITLIFE_IMAGE:-fitlife:latest}
     init: true
     ports:
       - "127.0.0.1:8100:8100"

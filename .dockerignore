@@ -19,6 +19,9 @@
 !config/openrouter.free.models.json
 !config/openrouter.free.routing.json
 !config/siliconflow.models.json
+!benchmarks/
+!benchmarks/cloud/
+!benchmarks/cloud/**
 **/__pycache__/
 **/*.pyc
 **/.env*
