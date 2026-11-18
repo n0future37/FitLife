@@ -82,7 +82,8 @@ CI MySQL/Redis为作业内全新一次性服务，仅回环端口；空密码roo
 
 ## 2026-11-16多模态运行增量
 
-当前Docker默认runtime及test阶段包含`.[media]`（MediaPipe、NumPy、OpenCV）与系统视频库。
+当前Docker默认runtime及test阶段包含`.[media]`（MediaPipe、NumPy、OpenCV）与系统视频库（含EGL/GLES原生链接依赖）。
+构建时显式加载MediaPipe原生库，避免只做Python导入漏掉动态链接错误；该检查不下载模型。
 Compose额外只读挂载`./data/pose-models:/app/data/pose-models:ro`；姿态权重不烘焙进镜像，
 先执行`python -m fitlife.pose_setup --download`并核对固定SHA256。
 图片分析仍需已有视觉模型配置；指定动作计数在独立本地子进程执行，不读取云模型密钥。

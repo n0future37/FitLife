@@ -22,9 +22,11 @@ FROM base AS media
 USER root
 RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
   && apt-get -o Acquire::https::Timeout=30 -o Acquire::Retries=2 update \
-  && apt-get -o Acquire::https::Timeout=30 -o Acquire::Retries=2 install -y --no-install-recommends libgl1 libglib2.0-0 libportaudio2 \
+  && apt-get -o Acquire::https::Timeout=30 -o Acquire::Retries=2 install -y --no-install-recommends libgl1 libegl1 libgles2 libglib2.0-0 libportaudio2 \
   && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir --timeout 60 --retries 2 --no-build-isolation '.[media]'
+# MediaPipe imports lazily; verify native EGL/GLES linkage without model weights.
+RUN python -c "import ctypes; from pathlib import Path; import mediapipe; ctypes.CDLL(str(Path(mediapipe.__file__).parent / 'tasks/c/libmediapipe.so'))"
 USER fitlife
 
 FROM media AS test
